@@ -7,6 +7,7 @@ from email.parser import BytesParser
 from html.parser import HTMLParser
 import os
 import plistlib
+import shutil
 import struct
 import subprocess
 import zlib
@@ -29,7 +30,8 @@ plist(app / "Contents/Info.plist", {
     "CFBundleDisplayName": "邮件本地翻译",
     "CFBundleExecutable": "MailTranslationProbe",
     "CFBundlePackageType": "APPL",
-    "CFBundleVersion": "6", "CFBundleShortVersionString": "0.6",
+    "CFBundleVersion": "7", "CFBundleShortVersionString": "0.7",
+    "CFBundleIconFile": "AppIcon",
     "LSMinimumSystemVersion": "26.4", "NSHighResolutionCapable": True, "LSUIElement": True,
     "CFBundleURLTypes": [{"CFBundleURLName": "Mail Translation", "CFBundleURLSchemes": ["mailtranslationprobe"]}],
 })
@@ -39,7 +41,7 @@ plist(ext / "Contents/Info.plist", {
     "CFBundleDisplayName": "邮件本地翻译",
     "CFBundleExecutable": "MailTranslationProbeExtension",
     "CFBundlePackageType": "XPC!",
-    "CFBundleVersion": "6", "CFBundleShortVersionString": "0.6",
+    "CFBundleVersion": "7", "CFBundleShortVersionString": "0.7",
     "NSExtension": {
         "NSExtensionPointIdentifier": "com.apple.email.extension",
         "NSExtensionPrincipalClass": "MailTranslationProbeExtension",
@@ -94,6 +96,24 @@ sample.write_bytes(fixture)
 env = dict(os.environ, DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer")
 def run(args):
     subprocess.run(args, env=env, check=True)
+
+# Package the generated artwork in all standard macOS icon representations.
+# Keep intermediate sizes in work; version only the original PNG artwork.
+icon_png = out / "assets/mail-translation-icon.png"
+iconset = work / "AppIcon.iconset"
+iconset.mkdir(parents=True, exist_ok=True)
+for size in (16, 32, 128, 256, 512):
+    for scale in (1, 2):
+        suffix = "@2x" if scale == 2 else ""
+        name = f"icon_{size}x{size}{suffix}.png"
+        pixels = str(size * scale)
+        subprocess.run(["/usr/bin/sips", "-z", pixels, pixels, str(icon_png),
+                        "--out", str(iconset / name)], env=env, check=True,
+                       stdout=subprocess.DEVNULL)
+icon_icns = work / "AppIcon.icns"
+run(["/usr/bin/iconutil", "-c", "icns", str(iconset), "-o", str(icon_icns)])
+shutil.copyfile(icon_icns, app / "Contents/Resources/AppIcon.icns")
+
 sdk = subprocess.check_output(["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"], env=env, text=True).strip()
 compiler = ["/usr/bin/xcrun", "--sdk", "macosx", "clang", "-fobjc-arc", "-fblocks", "-Wall", "-Wextra",
     "-Wno-unused-parameter", "-Wno-incompatible-pointer-types", "-mmacosx-version-min=26.4", "-isysroot", sdk,
@@ -116,7 +136,7 @@ helper = app / "Contents/Helpers/LanguageSetup.app"
 plist(helper / "Contents/Info.plist", {
     "CFBundleIdentifier": "local.codex.mailtranslationprobe.languages",
     "CFBundleName": "本地翻译语言包", "CFBundleExecutable": "LanguageSetup", "CFBundlePackageType": "APPL",
-    "CFBundleVersion": "6", "CFBundleShortVersionString": "0.6", "LSMinimumSystemVersion": "26.4",
+    "CFBundleVersion": "7", "CFBundleShortVersionString": "0.7", "LSMinimumSystemVersion": "26.4",
     "NSHighResolutionCapable": True,
 })
 run(swift + [str(source / "LanguageSetup.swift"), "-o", str(helper / "Contents/MacOS/LanguageSetup")])

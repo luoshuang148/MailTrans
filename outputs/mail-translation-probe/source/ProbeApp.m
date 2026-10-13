@@ -5,7 +5,6 @@
 
 @interface ProbeAppDelegate : NSObject <NSApplicationDelegate>
 @property NSStatusItem *statusItem;
-@property NSMenuItem *statusMenuItem;
 @property(nonatomic,copy) NSString *statusText;
 @property MTCache *cache;
 @property MTRequestGate *gate;
@@ -19,13 +18,10 @@
 @implementation ProbeAppDelegate
 - (void)setStatusText:(NSString *)text {
     _statusText=[text copy]?:@"";
-    self.statusMenuItem.title=text.length>90?[[text substringToIndex:90]stringByAppendingString:@"…"]:_statusText;
     self.statusItem.button.toolTip=_statusText;
 }
 - (NSMenu *)makeStatusMenu {
     NSMenu *menu=[NSMenu new];
-    self.statusMenuItem=[[NSMenuItem alloc]initWithTitle:self.statusText?:@"邮件翻译 · 就绪" action:NULL keyEquivalent:@""];
-    self.statusMenuItem.enabled=NO;[menu addItem:self.statusMenuItem];[menu addItem:NSMenuItem.separatorItem];
     NSMenuItem *clear=[[NSMenuItem alloc]initWithTitle:@"清空本地缓存" action:@selector(clearCache:) keyEquivalent:@""];clear.target=self;[menu addItem:clear];
     NSMenuItem *refresh=[[NSMenuItem alloc]initWithTitle:@"重新加载当前邮件" action:@selector(refreshAction:) keyEquivalent:@""];refresh.target=self;[menu addItem:refresh];
     [menu addItem:NSMenuItem.separatorItem];
