@@ -8,7 +8,7 @@ struct SetupView: View {
     @State private var status = "正在准备本地翻译语言包…"
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("准备苹果本地翻译").font(.title2).bold()
+            Text("MailTrans · 准备本地翻译").font(.title2).bold()
             Text("只下载语言模型。邮件正文不会上传到翻译服务器。")
             Text(status).foregroundStyle(.secondary)
             Button("取消并保留原文") { exit(1) }
@@ -31,7 +31,7 @@ struct SetupView: View {
 @main struct LanguageSetup: App {
     init() { NSApplication.shared.setActivationPolicy(.regular) }
     var body: some Scene {
-        WindowGroup("下载本地翻译语言包") {
+        WindowGroup("MailTrans · 本地语言包") {
             SetupView(source: Locale.Language(identifier: CommandLine.arguments.dropFirst().first ?? "en"), target: Locale.Language(identifier: "zh-Hans"))
         }.windowResizability(.contentSize)
     }

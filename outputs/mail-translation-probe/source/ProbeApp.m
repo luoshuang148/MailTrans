@@ -2,6 +2,7 @@
 #import <MailKit/MailKit.h>
 #import "MIMECore.h"
 #import <NaturalLanguage/NaturalLanguage.h>
+#import "MailLifecycle.h"
 
 @interface ProbeAppDelegate : NSObject <NSApplicationDelegate>
 @property NSStatusItem *statusItem;
@@ -14,6 +15,9 @@
 @property NSString *providerID;
 @property MTTranslationQueue *automaticQueue;
 @property BOOL stopping;
+@property NSTask *translationTask;
+@property NSTask *languageTask;
+@property NSUserDefaults *lifecyclePreferences;
 @end
 @implementation ProbeAppDelegate
 - (void)setStatusText:(NSString *)text {
@@ -25,33 +29,52 @@
     NSMenuItem *clear=[[NSMenuItem alloc]initWithTitle:@"清空本地缓存" action:@selector(clearCache:) keyEquivalent:@""];clear.target=self;[menu addItem:clear];
     NSMenuItem *refresh=[[NSMenuItem alloc]initWithTitle:@"重新加载当前邮件" action:@selector(refreshAction:) keyEquivalent:@""];refresh.target=self;[menu addItem:refresh];
     [menu addItem:NSMenuItem.separatorItem];
-    NSMenuItem *quit=[[NSMenuItem alloc]initWithTitle:@"退出邮件翻译" action:@selector(terminate:) keyEquivalent:@""];quit.target=NSApp;[menu addItem:quit];
+    NSMenuItem *quit=[[NSMenuItem alloc]initWithTitle:@"退出 MailTrans" action:@selector(quitManually:) keyEquivalent:@""];quit.target=self;[menu addItem:quit];
     return menu;
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+    self.lifecyclePreferences=[[NSUserDefaults alloc]initWithSuiteName:MTLifecycleDefaultsDomain];
+    if(!self.mailSessionToken.length){[NSApp terminate:nil];return;}
+    [self.lifecyclePreferences removeObjectForKey:MTManualQuitMailSession];
     self.providerID=@"apple-local";self.gate=[MTRequestGate new];self.automaticQueue=[MTTranslationQueue new];
     NSString *path=[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Containers/local.codex.mailtranslationprobe.extension/Data/Library/Caches/MailTranslation"];
     self.cache=[[MTCache alloc]initWithRoot:[NSURL fileURLWithPath:path isDirectory:YES]];
     // Invalidate old rendered controls once when upgrading from the two-action UI.
     if(![NSUserDefaults.standardUserDefaults boolForKey:@"MTMenuOnlyMigration5"]){[self.cache clear];[NSUserDefaults.standardUserDefaults setBool:YES forKey:@"MTMenuOnlyMigration5"];}
     self.statusItem=[NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
-    NSImage *icon=[NSImage imageWithSystemSymbolName:@"character.bubble" accessibilityDescription:@"邮件翻译"];icon.template=YES;
+    NSImage *icon=[NSImage imageWithSystemSymbolName:@"character.bubble" accessibilityDescription:@"MailTrans"];icon.template=YES;
     if(icon)self.statusItem.button.image=icon;else self.statusItem.button.title=@"译";
-    self.statusItem.menu=[self makeStatusMenu];self.statusText=@"邮件翻译 · 就绪";
+    self.statusItem.menu=[self makeStatusMenu];self.statusText=@"MailTrans · 就绪";
     [NSDistributedNotificationCenter.defaultCenter addObserver:self selector:@selector(cacheChanged:) name:@"local.codex.mailtranslationprobe.cacheChanged" object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
     [self refreshState];[self scheduleAutomaticTranslations];
     [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(cleanExpired:) userInfo:nil repeats:YES];
 }
 - (void)refreshState {self.recent=self.cache.recentMessages;}
 - (void)cleanExpired:(NSTimer *)timer {[self refreshState];}
-- (void)applicationWillTerminate:(NSNotification *)notification {self.stopping=YES;[self.cache clear];[self reloadMail];}
+- (NSString *)mailSessionToken {return MTMailSessionToken([NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.mail"]);}
+- (void)quitManually:(id)sender {
+    NSString *session=self.mailSessionToken;
+    if(session.length)[self.lifecyclePreferences setObject:session forKey:MTManualQuitMailSession];
+    else [self.lifecyclePreferences removeObjectForKey:MTManualQuitMailSession];
+    [self.lifecyclePreferences synchronize];
+    [NSApp terminate:sender];
+}
+- (void)applicationWillTerminate:(NSNotification *)notification {
+    @synchronized(self){
+        self.stopping=YES;
+        if(self.translationTask.running)[self.translationTask terminate];
+        if(self.languageTask.running)[self.languageTask terminate];
+    }
+    [self.cache clear];
+    if(self.mailSessionToken.length)[self reloadMail];
+}
 - (void)cacheChanged:(NSNotification *)note {dispatch_async(dispatch_get_main_queue(),^{if(!self.stopping){[self refreshState];[self scheduleAutomaticTranslations];}});}
 - (void)reloadMail {
     [MEExtensionManager reloadVisibleMessagesWithCompletionHandler:^(NSError *error){
         if(error)dispatch_async(dispatch_get_main_queue(),^{self.statusText=@"Mail 暂未刷新。请重新打开这封邮件，译文已保存在本地。";});
     }];
 }
-- (void)refreshAction:(id)sender {[self reloadMail];[self refreshState];if(!self.recent.count)self.statusText=@"请先启用 Mail 的“邮件本地翻译”扩展，再切换或重新打开一封普通邮件。";}
+- (void)refreshAction:(id)sender {[self reloadMail];[self refreshState];if(!self.recent.count)self.statusText=@"请先启用 Mail 的“MailTrans”扩展，再切换或重新打开一封普通邮件。";}
 - (void)activateMail {
     [[NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.mail"].firstObject activateWithOptions:0];
 }
@@ -88,16 +111,26 @@
     NSURL *url=[[NSBundle mainBundle] URLForAuxiliaryExecutable:@"TranslationWorker"];
     NSTask *task=[NSTask new];task.executableURL=url;
     NSPipe *input=[NSPipe pipe],*output=[NSPipe pipe];task.standardInput=input;task.standardOutput=output;task.standardError=NSFileHandle.fileHandleWithNullDevice;
-    NSError *error=nil;if(!url||![task launchAndReturnError:&error])return @{@"errorCode":@"launch_failed",@"message":@"本地翻译程序未能启动。"};
+    NSError *error=nil;
+    @synchronized(self){
+        if(self.stopping)return @{@"errorCode":@"cancelled"};
+        if(!url||![task launchAndReturnError:&error])return @{@"errorCode":@"launch_failed",@"message":@"本地翻译程序未能启动。"};
+        self.translationTask=task;
+    }
+    @try {
     NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"texts":message.texts,@"target":@"zh-Hans",@"provider":self.providerID} options:0 error:nil];
     @try {[input.fileHandleForWriting writeData:data];[input.fileHandleForWriting closeFile];}
     @catch(NSException *exception){[task terminate];return @{@"errorCode":@"worker_failed",@"message":@"本地翻译未完成，原文已保留。"};}
     NSData *result=[output.fileHandleForReading readDataToEndOfFile];[task waitUntilExit];
     id value=[NSJSONSerialization JSONObjectWithData:result options:0 error:nil];
     return [value isKindOfClass:NSDictionary.class]?value:@{@"errorCode":@"worker_failed",@"message":@"本地翻译未完成，原文已保留。"};
+    } @finally {
+        @synchronized(self){if(self.translationTask==task)self.translationTask=nil;}
+    }
 }
 - (void)translateKey:(NSString *)key {[self translateKey:key automatic:NO];}
 - (void)translateKey:(NSString *)key automatic:(BOOL)automatic {
+    if(self.stopping)return;
     if(![MTCache isValidKey:key]){if(!automatic){self.statusText=@"请在 Mail 中打开邮件，并点击正文上方的翻译按钮。";}else [self startNextAutomaticTranslation];return;}
     NSData *source=[self.cache sourceForKey:key];MTMessage *message=source?[MTMessage messageWithData:source]:nil;
     if(!message.eligible){if(!automatic){self.statusText=@"邮件缓存已过期或类型暂不支持，请重新打开邮件。";}else [self startNextAutomaticTranslation];return;}
@@ -118,6 +151,7 @@
         NSData *display=nil;
         if([result[@"translations"] isKindOfClass:NSArray.class])display=[message renderTranslations:result[@"translations"] includeControls:YES];
         dispatch_async(dispatch_get_main_queue(),^{
+            if(self.stopping)return;
             self.busy=NO;self.workingKey=nil;
             if(![self.gate isCurrent:token forKey:requestKey]){self.statusText=@"已保留原文，取消了迟到的翻译结果。";[self startNextAutomaticTranslation];return;}
             if([result[@"errorCode"] isEqual:@"model_missing"]){
@@ -138,6 +172,7 @@
     });
 }
 - (void)prepareLanguage:(NSString *)language completion:(void (^)(BOOL))completion {
+    if(self.stopping)return;
     NSCharacterSet *allowed=[NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"];
     if(language.length>35||[language rangeOfCharacterFromSet:allowed.invertedSet].location!=NSNotFound){completion(NO);return;}
     NSURL *helper=[[NSBundle mainBundle].bundleURL URLByAppendingPathComponent:@"Contents/Helpers/LanguageSetup.app/Contents/MacOS/LanguageSetup"];
@@ -146,12 +181,18 @@
         NSTask *task=[NSTask new];task.executableURL=helper;task.arguments=@[language];
         NSPipe *output=[NSPipe pipe];task.standardOutput=output;task.standardError=NSFileHandle.fileHandleWithNullDevice;
         BOOL ready=NO;NSError *error=nil;
-        if([task launchAndReturnError:&error]){
+        BOOL launched=NO;
+        @synchronized(self){
+            if(!self.stopping){launched=[task launchAndReturnError:&error];if(launched)self.languageTask=task;}
+        }
+        if(launched){
             NSData *result=[output.fileHandleForReading readDataToEndOfFile];[task waitUntilExit];
             NSString *text=[[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding];
             ready=task.terminationStatus==0&&[text containsString:@"MAIL_TRANSLATION_MODELS_READY"];
         }
+        @synchronized(self){if(self.languageTask==task)self.languageTask=nil;}
         dispatch_async(dispatch_get_main_queue(),^{
+            if(self.stopping)return;
             self.busy=NO;self.statusText=ready?@"本地语言包已准备好。":@"语言包准备未完成，原文已保留。";
             completion(ready);
         });

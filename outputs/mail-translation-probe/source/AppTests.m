@@ -1,16 +1,24 @@
 #define MT_APP_TEST 1
 #import "ProbeApp.m"
 #import <stdio.h>
+@interface TestApplication:NSApplication
+@property BOOL terminationRequested;
+@property(copy) void(^terminationObserver)(void);
+@end
+@implementation TestApplication
+-(void)terminate:(id)sender {self.terminationRequested=YES;if(self.terminationObserver)self.terminationObserver();}
+@end
 @interface UIProbe:ProbeAppDelegate
 @property NSDictionary *workerResult;
 @end
 @implementation UIProbe
 -(void)activateMail{}
 -(void)reloadMail{}
+-(NSString *)mailSessionToken{return @"test-mail-session";}
 -(NSDictionary*)runWorker:(MTMessage*)message{return self.workerResult?:@{@"errorCode":@"launch_failed",@"message":@"Test worker unavailable"};}
 @end
 int main(void) {@autoreleasepool {
- [NSApplication sharedApplication];NSUInteger initialWindows=NSApp.windows.count;
+ [TestApplication sharedApplication];NSUInteger initialWindows=NSApp.windows.count;
  ProbeAppDelegate *delegate=[ProbeAppDelegate new];
  NSURL *root=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]];
  delegate.cache=[[MTCache alloc]initWithRoot:root];
@@ -54,6 +62,34 @@ int main(void) {@autoreleasepool {
  [automatic clearCache:nil];
  if([automatic.gate isCurrent:late forKey:evictedKey]||automatic.cache.recentMessages.count){fputs("FAIL: clear cache must cancel even an evicted in-flight message\n",stderr);okay=NO;}
  [delegate.cache clear];
+ // Quitting while translating must not leave our subprocesses running.
+ if(![automatic respondsToSelector:NSSelectorFromString(@"setTranslationTask:")]||
+    ![automatic respondsToSelector:NSSelectorFromString(@"setLanguageTask:")]){
+  fputs("FAIL: host shutdown must own and terminate translation/language processes\n",stderr);okay=NO;
+ }else{
+  NSTask *worker=[NSTask new],*language=[NSTask new];
+  for(NSTask *task in @[worker,language]){task.executableURL=[NSURL fileURLWithPath:@"/bin/sleep"];task.arguments=@[@"30"];[task launchAndReturnError:nil];}
+  [automatic setValue:worker forKey:@"translationTask"];[automatic setValue:language forKey:@"languageTask"];
+  [automatic applicationWillTerminate:[NSNotification notificationWithName:NSApplicationWillTerminateNotification object:NSApp]];
+  NSDate *end=[NSDate dateWithTimeIntervalSinceNow:3];
+  while((worker.running||language.running)&&end.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
+  if(worker.running||language.running||!automatic.stopping||automatic.cache.recentMessages.count){fputs("FAIL: quitting must stop owned children and clear cache\n",stderr);okay=NO;}
+  for(NSTask *task in @[worker,language])if(task.running)[task terminate];
+ }
+ if(![automatic respondsToSelector:NSSelectorFromString(@"quitManually:")]||
+    ![automatic respondsToSelector:NSSelectorFromString(@"setLifecyclePreferences:")]){
+  fputs("FAIL: manual quit must persist Mail session suppression before terminating\n",stderr);okay=NO;
+ }else{
+  NSString *suite=[@"local.mailtrans.tests.quit."stringByAppendingString:NSUUID.UUID.UUIDString];
+  NSUserDefaults *preferences=[[NSUserDefaults alloc]initWithSuiteName:suite];
+  [automatic setValue:preferences forKey:@"lifecyclePreferences"];
+  __block BOOL savedBeforeExit=NO;
+  ((TestApplication *)NSApp).terminationObserver=^{savedBeforeExit=[[preferences stringForKey:@"MTManualQuitMailSession"]isEqual:@"test-mail-session"];};
+  [automatic quitManually:nil];
+  if(![(TestApplication *)NSApp terminationRequested]||!savedBeforeExit){fputs("FAIL: manual quit must save suppression before requesting normal termination\n",stderr);okay=NO;}
+  ((TestApplication *)NSApp).terminationObserver=nil;
+  [preferences removePersistentDomainForName:suite];
+ }
  if(!okay)return 1;
  puts("PASS: menu-only UI, English automatic policy, language setup guidance, cached switching and safe cache clearing");return 0;
 }}

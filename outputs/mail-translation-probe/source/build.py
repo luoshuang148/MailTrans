@@ -16,7 +16,7 @@ source = Path(__file__).resolve().parent
 out = source.parent
 work = out.parent.parent / "work" / "mail-real"
 work.mkdir(parents=True, exist_ok=True)
-app = out / "Mail Translation Probe.app"
+app = out / "MailTrans.app"
 ext = app / "Contents" / "PlugIns" / "MailTranslationProbe.appex"
 for directory in [app / "Contents/MacOS", app / "Contents/Resources", ext / "Contents/MacOS"]:
     directory.mkdir(parents=True, exist_ok=True)
@@ -26,22 +26,22 @@ def plist(path, value):
 
 plist(app / "Contents/Info.plist", {
     "CFBundleIdentifier": "local.codex.mailtranslationprobe",
-    "CFBundleName": "邮件本地翻译",
-    "CFBundleDisplayName": "邮件本地翻译",
-    "CFBundleExecutable": "MailTranslationProbe",
+    "CFBundleName": "MailTrans",
+    "CFBundleDisplayName": "MailTrans",
+    "CFBundleExecutable": "MailTrans",
     "CFBundlePackageType": "APPL",
-    "CFBundleVersion": "7", "CFBundleShortVersionString": "0.7",
+    "CFBundleVersion": "8", "CFBundleShortVersionString": "0.8",
     "CFBundleIconFile": "AppIcon",
     "LSMinimumSystemVersion": "26.4", "NSHighResolutionCapable": True, "LSUIElement": True,
-    "CFBundleURLTypes": [{"CFBundleURLName": "Mail Translation", "CFBundleURLSchemes": ["mailtranslationprobe"]}],
+    "CFBundleURLTypes": [{"CFBundleURLName": "MailTrans", "CFBundleURLSchemes": ["mailtranslationprobe"]}],
 })
 plist(ext / "Contents/Info.plist", {
     "CFBundleIdentifier": "local.codex.mailtranslationprobe.extension",
-    "CFBundleName": "邮件本地翻译",
-    "CFBundleDisplayName": "邮件本地翻译",
+    "CFBundleName": "MailTrans",
+    "CFBundleDisplayName": "MailTrans",
     "CFBundleExecutable": "MailTranslationProbeExtension",
     "CFBundlePackageType": "XPC!",
-    "CFBundleVersion": "7", "CFBundleShortVersionString": "0.7",
+    "CFBundleVersion": "8", "CFBundleShortVersionString": "0.8",
     "NSExtension": {
         "NSExtensionPointIdentifier": "com.apple.email.extension",
         "NSExtensionPrincipalClass": "MailTranslationProbeExtension",
@@ -119,15 +119,20 @@ compiler = ["/usr/bin/xcrun", "--sdk", "macosx", "clang", "-fobjc-arc", "-fblock
     "-Wno-unused-parameter", "-Wno-incompatible-pointer-types", "-mmacosx-version-min=26.4", "-isysroot", sdk,
     "-I"+sdk+"/usr/include/libxml2", "-lxml2", "-framework", "Cocoa", "-framework", "MailKit", "-framework", "NaturalLanguage"]
 core = str(source / "MIMECore.m")
+life = str(source / "MailLifecycle.m")
+run(compiler + [str(source / "LifecycleFixture.m"), "-o", str(work / "lifecycle-fixture")])
+run(compiler + [life, str(source / "LifecycleTests.m"), "-o", str(work / "lifecycle-tests")])
+run([str(work / "lifecycle-tests"), str(work / "lifecycle-fixture")])
 run(compiler + [core, str(source / "CoreTests.m"), "-o", str(work / "core-tests")])
 run([str(work / "core-tests")])
-run(compiler + [core, str(source / "AppTests.m"), "-o", str(work / "app-tests")])
+run(compiler + [core, life, str(source / "AppTests.m"), "-o", str(work / "app-tests")])
 run([str(work / "app-tests")])
 run(compiler + [core, str(source / "ExtensionTests.m"), "-o", str(work / "extension-tests")])
 run([str(work / "extension-tests")])
 run(compiler + ["-fapplication-extension", "-Xlinker", "-e", "-Xlinker", "_NSExtensionMain",
     core, str(source / "ProbeExtension.m"), "-o", str(ext / "Contents/MacOS/MailTranslationProbeExtension")])
-run(compiler + [core, str(source / "ProbeApp.m"), "-o", str(app / "Contents/MacOS/MailTranslationProbe")])
+run(compiler + [core, life, str(source / "ProbeApp.m"), "-o", str(app / "Contents/MacOS/MailTrans")])
+run(compiler + [life, str(source / "LifecycleMain.m"), "-o", str(app / "Contents/MacOS/MailTransLifecycle")])
 swift = ["/usr/bin/xcrun", "swiftc", "-parse-as-library", "-target", "arm64-apple-macos26.4"]
 run(swift + [str(source / "TranslationProvider.swift"), str(source / "TranslationWorker.swift"),
     "-o", str(app / "Contents/MacOS/TranslationWorker")])
@@ -135,8 +140,8 @@ helper = app / "Contents/Helpers/LanguageSetup.app"
 (helper / "Contents/MacOS").mkdir(parents=True, exist_ok=True)
 plist(helper / "Contents/Info.plist", {
     "CFBundleIdentifier": "local.codex.mailtranslationprobe.languages",
-    "CFBundleName": "本地翻译语言包", "CFBundleExecutable": "LanguageSetup", "CFBundlePackageType": "APPL",
-    "CFBundleVersion": "7", "CFBundleShortVersionString": "0.7", "LSMinimumSystemVersion": "26.4",
+    "CFBundleName": "MailTrans 语言包", "CFBundleExecutable": "LanguageSetup", "CFBundlePackageType": "APPL",
+    "CFBundleVersion": "8", "CFBundleShortVersionString": "0.8", "LSMinimumSystemVersion": "26.4",
     "NSHighResolutionCapable": True,
 })
 run(swift + [str(source / "LanguageSetup.swift"), "-o", str(helper / "Contents/MacOS/LanguageSetup")])
@@ -150,7 +155,8 @@ def clean_signing_metadata():
         if attribute.encode() in attributes:
             run(["/usr/bin/xattr", "-dr", attribute, str(app)])
 for target, extra in [(ext, ["--entitlements", str(entitlements)]), (helper, []),
-                      (app / "Contents/MacOS/TranslationWorker", []), (app, [])]:
+                      (app / "Contents/MacOS/TranslationWorker", []),
+                      (app / "Contents/MacOS/MailTransLifecycle", []), (app, [])]:
     for attempt in range(3):
         clean_signing_metadata()
         result = subprocess.run(["/usr/bin/codesign", "--force", "--sign", "-"] + extra + [str(target)], env=env)
@@ -171,5 +177,6 @@ else:
 
 (work / "build-verification.txt").write_text(
     "Compilation: passed\nAd-hoc signature verification: passed\nCore tests: passed\n"
+    "App, extension and lifecycle tests: passed\n"
     "Mail rendering and live local translation: require separate UI verification\n")
 print(f"Built: {app}")

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
-worker=Path(sys.argv[1]) if len(sys.argv)>1 else Path(__file__).resolve().parents[1]/'Mail Translation Probe.app/Contents/MacOS/TranslationWorker'
+worker=Path(sys.argv[1]) if len(sys.argv)>1 else Path(__file__).resolve().parents[1]/'MailTrans.app/Contents/MacOS/TranslationWorker'
 def run(payload):
     result=subprocess.run([str(worker)],input=json.dumps(payload),text=True,capture_output=True,timeout=120)
     return result.returncode,json.loads(result.stdout)
