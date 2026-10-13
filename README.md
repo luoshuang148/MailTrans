@@ -1,10 +1,12 @@
-# 苹果 Mail 本地翻译
+# MailTrans
 
-当前版本：**0.7 / build 7**；Git 初始基线为 0.6。通过 MailKit 阅读扩展与苹果 Translation 框架，在 Apple Mail 内将邮件正文翻译为简体中文。
+当前版本：**0.8 / build 8**；Git 初始基线为 0.6。通过 MailKit 阅读扩展与苹果 Translation 框架，在 Apple Mail 内将邮件正文翻译为简体中文。
 
 英文正文自动翻译；中文视图提供“显示原文”，原文视图提供“翻译为中文”。保留原始 MIME 与附件字节，尽量保留 HTML 排版、表格、链接和图片。图片加载沿用 Mail 的隐私设置。宿主仅在菜单栏运行，当前翻译引擎为 `apple-local`。
 
 0.7 移除下拉菜单顶部的状态行，菜单从“清空本地缓存”开始；状态保留在菜单栏图标的悬停提示中。应用图标使用蓝色信封与 `A` / `文` 双语卡片，原图与生成提示词见 [图标资源](outputs/mail-translation-probe/assets/)。
+
+MailTrans 随 Apple Mail 启动和退出；手动退出后，本次 Mail 会话保持退出，下次启动 Mail 再自动运行。关闭 Mail 窗口不等于退出 Mail。后台监听器在登录会话内无界面待命，使用系统应用列表变化通知，不定时轮询。
 
 ## 项目入口
 
@@ -23,12 +25,24 @@
 
 ```sh
 python3 outputs/mail-translation-probe/source/build.py
-python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/Mail Translation Probe.app/Contents/MacOS/TranslationWorker'
+python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
-构建会运行 `CoreTests`、`AppTests`、`ExtensionTests`，生成并临时签名 `outputs/mail-translation-probe/Mail Translation Probe.app`，验证签名。worker 检查需要先完成应用安装和英中语言包准备；本机安装副本已通过该检查。2026-10-14 验证时，Documents 构建路径中的相同 worker 返回 `model_missing`，而 `/Applications` 副本通过；具体原因尚未确认，不将构建路径的实际翻译检查记为通过。
+构建会运行 `CoreTests`、`AppTests`、`ExtensionTests`、`LifecycleTests`，生成并临时签名 `outputs/mail-translation-probe/MailTrans.app`，验证签名。worker 检查需要先完成应用安装和英中语言包准备；本机安装副本已通过该检查。2026-10-14 验证时，Documents 构建路径中的相同 worker 返回 `model_missing`，而 `/Applications` 副本通过；具体原因尚未确认，不将构建路径的实际翻译检查记为通过。
 
-构建不会安装或替换 `/Applications` 中的应用。安装更新请遵循交接文档；日常运行使用 `/Applications/Mail Translation Probe.app`。当前为本机开发版，尚未公证或进行跨机器验证。
+构建不会安装或替换 `/Applications` 中的应用。安装更新请遵循交接文档；日常运行使用 `/Applications/MailTrans.app`。当前为本机开发版，尚未公证或进行跨机器验证。
+
+## 自动联动管理
+
+安装应用后执行：
+
+```sh
+python3 outputs/mail-translation-probe/source/manage_lifecycle.py enable
+python3 outputs/mail-translation-probe/source/manage_lifecycle.py status
+python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
+```
+
+用户 LaunchAgent 为 `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist`，启动应用内的 `MailTransLifecycle`。禁用命令移除监听器的 LaunchAgent；日常手动退出菜单只暂停本次 Mail 会话。更新或删除应用前先禁用监听器，安装后再启用。构建不会自行安装此服务。
 
 ## 版本控制
 
