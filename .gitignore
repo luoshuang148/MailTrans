@@ -1,0 +1,28 @@
+# Generated applications and local development artifacts
+/work/
+*.app/
+*.appex/
+*.dSYM/
+__pycache__/
+*.py[cod]
+.DS_Store
+.AppleDouble
+._*
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Mail data must stay local; only the synthetic fixture is versioned
+*.eml
+*.mbox
+*.mbox/
+*.source.eml
+*.translated.eml
+**/MailTranslation/
+!/outputs/mail-translation-probe/layout-sample.eml

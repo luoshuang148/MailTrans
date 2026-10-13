@@ -1,0 +1,3 @@
+* text=auto
+# Keep the synthetic MIME fixture byte-for-byte, including CRLF line endings.
+*.eml -text
