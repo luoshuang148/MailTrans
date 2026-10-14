@@ -4,8 +4,8 @@ Thanks for helping make local email translation more useful. Issues and pull req
 
 ## Before you start
 
-- Search [existing issues](https://github.com/luoshuang148/apple-mail-local-translation/issues) before opening a new one.
-- Use the [issue forms](https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose) for bugs and feature requests. Discuss large behavior changes before investing in an implementation.
+- Search [existing issues](https://github.com/luoshuang148/MailTrans/issues) before opening a new one.
+- Use the [issue forms](https://github.com/luoshuang148/MailTrans/issues/new/choose) for bugs and feature requests. Discuss large behavior changes before investing in an implementation.
 - Read the [current limitations](README.md#current-limitations), [getting started guide](docs/getting-started.md), and [architecture](docs/architecture.md).
 - Never attach real emails, mailbox exports, email cache files, addresses, credentials, or screenshots containing private messages. Reproduce with synthetic content and `example.invalid` addresses.
 - Report vulnerabilities using [SECURITY.md](SECURITY.md), rather than publishing exploit details in an issue.

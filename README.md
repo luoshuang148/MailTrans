@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/status-experimental-f59e0b" alt="Experimental">
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+  <p><a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 </div>
 
 ![Illustrated MailTrans workflow using synthetic email content; not an application screenshot](docs/assets/mailtrans-overview.svg)
@@ -38,8 +38,8 @@ The current translation target and interface controls are Chinese. Other source 
 You need **Apple Silicon, macOS 26.4 or later, full Xcode at `/Applications/Xcode.app`, and Python 3**. The verified build environment uses Xcode 26.6 / macOS SDK 26.5; other toolchains are unverified.
 
 ```sh
-git clone https://github.com/luoshuang148/apple-mail-local-translation.git
-cd apple-mail-local-translation
+git clone https://github.com/luoshuang148/MailTrans.git
+cd MailTrans
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
@@ -75,7 +75,7 @@ Read [cache details](docs/getting-started.md#cache-and-privacy) and the [securit
 
 ## Help and contribute
 
-Check the [troubleshooting guide](docs/getting-started.md#troubleshooting), [open issues](https://github.com/luoshuang148/apple-mail-local-translation/issues), or submit a [bug report / feature request](https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose). Reports in English or Chinese are welcome.
+Check the [troubleshooting guide](docs/getting-started.md#troubleshooting), [open issues](https://github.com/luoshuang148/MailTrans/issues), or submit a [bug report / feature request](https://github.com/luoshuang148/MailTrans/issues/new/choose). Reports in English or Chinese are welcome.
 
 Contributions to documentation, synthetic test cases, accessibility, compatibility testing, and the translation pipeline are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and validation expectations.
 

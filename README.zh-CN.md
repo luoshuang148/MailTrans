@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/status-experimental-f59e0b" alt="实验阶段">
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
+  <p><a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
 </div>
 
 ![MailTrans 工作流程示意，使用人工邮件内容，并非应用截图](docs/assets/mailtrans-overview.svg)
@@ -38,8 +38,8 @@ MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**
 需要 **Apple Silicon、macOS 26.4 或以上、安装在 `/Applications/Xcode.app` 的完整 Xcode，以及 Python 3**。已验证的构建环境为 Xcode 26.6 / macOS SDK 26.5，其他工具链尚未验证。
 
 ```sh
-git clone https://github.com/luoshuang148/apple-mail-local-translation.git
-cd apple-mail-local-translation
+git clone https://github.com/luoshuang148/MailTrans.git
+cd MailTrans
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
@@ -75,7 +75,7 @@ python3 outputs/mail-translation-probe/source/build.py
 
 ## 反馈与贡献
 
-先查看[常见问题](docs/getting-started.zh-CN.md#常见问题)和[已有 Issues](https://github.com/luoshuang148/apple-mail-local-translation/issues)，再提交[问题报告或功能建议](https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose)。欢迎中文或英文反馈。
+先查看[常见问题](docs/getting-started.zh-CN.md#常见问题)和[已有 Issues](https://github.com/luoshuang148/MailTrans/issues)，再提交[问题报告或功能建议](https://github.com/luoshuang148/MailTrans/issues/new/choose)。欢迎中文或英文反馈。
 
 欢迎改进文档、添加人工测试邮件、开展无障碍与兼容性验证，或完善翻译流程。构建和提交要求见[贡献指南](CONTRIBUTING.md)。
 
