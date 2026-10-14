@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup and troubleshooting / 安装与常见问题
+    url: https://github.com/luoshuang148/apple-mail-local-translation/blob/main/docs/getting-started.md
+    about: Check installation, models, cache, and lifecycle behavior before reporting.
+  - name: 中文安装与使用指南
+    url: https://github.com/luoshuang148/apple-mail-local-translation/blob/main/docs/getting-started.zh-CN.md
+    about: 查看环境要求、安装、更新、卸载与常见问题。
+  - name: Security policy / 安全反馈
+    url: https://github.com/luoshuang148/apple-mail-local-translation/blob/main/SECURITY.md
+    about: Use private reporting for vulnerabilities. Do not publish exploit details or email data.

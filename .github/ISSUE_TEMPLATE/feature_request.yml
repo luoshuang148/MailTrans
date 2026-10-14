@@ -1,0 +1,31 @@
+name: Feature request / 功能建议
+description: Suggest an improvement for MailTrans / 建议改进
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English and Chinese are welcome. Describe the problem and the outcome you need.
+        Please use synthetic examples and avoid private email content.
+        欢迎中文或英文。请说明使用场景与希望得到的结果，不提供真实邮件内容。
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case / 问题与场景
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome / 希望实现的效果
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 已考虑的替代方式
+  - type: textarea
+    id: context
+    attributes:
+      label: Compatibility and privacy considerations / 兼容性与隐私影响
+      description: Mention any language, platform, or external-service requirements.
