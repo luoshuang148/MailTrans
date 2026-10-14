@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/status-experimental-f59e0b" alt="Experimental">
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.9.0">Pre-release</a> · <a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 </div>
 
 ![Illustrated MailTrans workflow using synthetic email content; not an application screenshot](docs/assets/mailtrans-overview.svg)
