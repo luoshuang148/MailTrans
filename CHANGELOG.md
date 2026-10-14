@@ -1,6 +1,6 @@
 # Changelog
 
-User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/apple-mail-local-translation/commits/main/) for implementation details.
+User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/MailTrans/commits/main/) for implementation details.
 
 ## Unreleased
 

@@ -20,8 +20,8 @@ Command Line Tools alone are not the documented build environment. A newer opera
 ## Build from source
 
 ```sh
-git clone https://github.com/luoshuang148/apple-mail-local-translation.git
-cd apple-mail-local-translation
+git clone https://github.com/luoshuang148/MailTrans.git
+cd MailTrans
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
@@ -152,4 +152,4 @@ To validate the installed worker independently after preparing models:
 python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
-This tests real local translation, ordering, Chinese preservation, and error cases. It does not verify Mail's interface rendering. If an issue remains, use the [issue forms](https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose) with a synthetic reproduction and sanitized output.
+This tests real local translation, ordering, Chinese preservation, and error cases. It does not verify Mail's interface rendering. If an issue remains, use the [issue forms](https://github.com/luoshuang148/MailTrans/issues/new/choose) with a synthetic reproduction and sanitized output.

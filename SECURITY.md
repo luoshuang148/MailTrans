@@ -8,11 +8,11 @@ Security fixes are developed for the latest source on `main` (currently the 0.9 
 
 ## Report a vulnerability
 
-Use GitHub's [private vulnerability reporting](https://github.com/luoshuang148/apple-mail-local-translation/security/advisories/new) for suspected vulnerabilities. If that entry point is unavailable, open an issue requesting a private reporting channel **without publishing vulnerability details**.
+Use GitHub's [private vulnerability reporting](https://github.com/luoshuang148/MailTrans/security/advisories/new) for suspected vulnerabilities. If that entry point is unavailable, open an issue requesting a private reporting channel **without publishing vulnerability details**.
 
 Include the affected version or commit, macOS/Mail versions, impact, and a minimal synthetic reproduction. Do not submit real email, cache contents, personal addresses, access tokens, or an unsanitized mailbox export.
 
-Ordinary installation failures, model errors, and translation-quality problems belong in the [bug report form](https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose).
+Ordinary installation failures, model errors, and translation-quality problems belong in the [bug report form](https://github.com/luoshuang148/MailTrans/issues/new/choose).
 
 ## Privacy boundaries
 

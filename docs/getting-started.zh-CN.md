@@ -20,8 +20,8 @@
 ## 从源码构建
 
 ```sh
-git clone https://github.com/luoshuang148/apple-mail-local-translation.git
-cd apple-mail-local-translation
+git clone https://github.com/luoshuang148/MailTrans.git
+cd MailTrans
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
@@ -152,4 +152,4 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
 python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
-此命令检查实际本地翻译、顺序、中文保留及错误路径，不验证 Mail 界面排版。仍有问题时通过[反馈表单](https://github.com/luoshuang148/apple-mail-local-translation/issues/new/choose)，附人工复现材料和清理后的输出。
+此命令检查实际本地翻译、顺序、中文保留及错误路径，不验证 Mail 界面排版。仍有问题时通过[反馈表单](https://github.com/luoshuang148/MailTrans/issues/new/choose)，附人工复现材料和清理后的输出。
