@@ -10,6 +10,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)messageWithData:(NSData *)data;
 + (NSString *)keyForData:(NSData *)data;
 - (nullable NSData *)renderTranslations:(nullable NSArray<NSString *> *)translations includeControls:(BOOL)controls;
+- (NSString *)bodyTextForLanguageRecognition;
 @end
 
 @interface MTCache : NSObject

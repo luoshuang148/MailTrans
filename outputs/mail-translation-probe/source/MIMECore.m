@@ -52,19 +52,24 @@ static NSString *DecodeHeader(NSString *s){
 -(NSData*)render:(NSArray*)translations cursor:(NSUInteger*)cursor key:(NSString*)key controls:(BOOL)controls;
 @end
 
-static void Collect(xmlNodePtr node,NSMutableArray *nodes,NSMutableArray *texts){
+static void Collect(xmlNodePtr node,NSMutableArray *nodes,NSMutableArray *texts,BOOL languageRecognition){
  NSSet *excluded=[NSSet setWithArray:@[@"head",@"script",@"style",@"noscript",@"svg",@"math",@"title",@"textarea",@"select",@"pre",@"code"]];
  for(xmlNodePtr n=node;n;n=n->next){
   if(n->type==XML_ELEMENT_NODE){
-   NSString *tag=[NSString stringWithUTF8String:(const char*)n->name];if([excluded containsObject:tag.lowercaseString])continue;
+   NSString *tag=[[NSString stringWithUTF8String:(const char*)n->name]lowercaseString];
+   if([excluded containsObject:tag]&&!(languageRecognition&&([tag isEqual:@"pre"]||[tag isEqual:@"code"])))continue;
    xmlChar *st=xmlGetProp(n,BAD_CAST "style"),*hidden=xmlGetProp(n,BAD_CAST "hidden"),*aria=xmlGetProp(n,BAD_CAST "aria-hidden"),*ident=xmlGetProp(n,BAD_CAST "id");
    NSString *style=st?[[NSString stringWithUTF8String:(const char*)st]lowercaseString]:@"";style=[style stringByReplacingOccurrencesOfString:@" " withString:@""];
    BOOL skip=hidden||(aria&&!xmlStrcasecmp(aria,BAD_CAST "true"))||(ident&&!xmlStrcmp(ident,BAD_CAST "mail-translation-controls"))||[style containsString:@"display:none"]||[style containsString:@"visibility:hidden"];
    if(st)xmlFree(st);if(hidden)xmlFree(hidden);if(aria)xmlFree(aria);if(ident)xmlFree(ident);
-   if(!skip)Collect(n->children,nodes,texts);
+   if(!skip){
+    Collect(n->children,nodes,texts,languageRecognition);
+    if(languageRecognition&&[@[@"p",@"div",@"br",@"pre",@"li",@"tr",@"h1",@"h2",@"h3",@"blockquote"]containsObject:tag])[texts addObject:@"\n"];
+   }
   }else if(n->type==XML_TEXT_NODE&&n->content){
    NSString *text=Trim([NSString stringWithUTF8String:(const char*)n->content]?:@"");
-   if(CanTranslate(text)){[nodes addObject:[NSValue valueWithPointer:n]];[texts addObject:text];}
+   if(languageRecognition){[texts addObject:[NSString stringWithUTF8String:(const char*)n->content]?:@""];}
+   else if(CanTranslate(text)){[nodes addObject:[NSValue valueWithPointer:n]];[texts addObject:text];}
   }
  }
 }
@@ -141,7 +146,7 @@ static void Controls(htmlDocPtr doc,NSString *key,BOOL translated){
  if(self.chunks.count){NSMutableData *d=self.header.mutableCopy;[d appendData:[[self.newline stringByAppendingString:self.newline]dataUsingEncoding:NSUTF8StringEncoding]];for(id c in self.chunks){NSData *v=[c isKindOfClass:MTPart.class]?[c render:translations cursor:cursor key:key controls:controls]:c;if(!v)return nil;[d appendData:v];}return d;}
  if(!self.chosen||(!translations&&!controls))return self.raw;
  if([self.type isEqual:@"text/html"]){
-  htmlDocPtr doc=HTML(self.text);if(!doc)return nil;NSMutableArray *nodes=[NSMutableArray new],*texts=[NSMutableArray new];Collect(xmlDocGetRootElement(doc),nodes,texts);
+  htmlDocPtr doc=HTML(self.text);if(!doc)return nil;NSMutableArray *nodes=[NSMutableArray new],*texts=[NSMutableArray new];Collect(xmlDocGetRootElement(doc),nodes,texts,NO);
   if(translations)for(NSValue *value in nodes){
    if(*cursor>=translations.count){xmlFreeDoc(doc);return nil;}xmlNodePtr n=value.pointerValue;NSString *old=[NSString stringWithUTF8String:(const char*)n->content]?:@"";NSRange r=[old rangeOfString:Trim(old)];
    NSString *value=[NSString stringWithFormat:@"%@%@%@",[old substringToIndex:r.location],translations[(*cursor)++],[old substringFromIndex:NSMaxRange(r)]];xmlNodeSetContent(n,BAD_CAST value.UTF8String);
@@ -186,7 +191,7 @@ static NSArray *Choose(MTPart *root){
  NSMutableArray *texts=[NSMutableArray new];
  for(MTPart *part in BodyParts(root)){
   part.chosen=YES;
-  if([part.type isEqual:@"text/html"]){htmlDocPtr doc=HTML(part.text);if(doc){Collect(xmlDocGetRootElement(doc),[NSMutableArray new],part.segments);xmlFreeDoc(doc);}}
+  if([part.type isEqual:@"text/html"]){htmlDocPtr doc=HTML(part.text);if(doc){Collect(xmlDocGetRootElement(doc),[NSMutableArray new],part.segments,NO);xmlFreeDoc(doc);}}
   else if(CanTranslate(Trim(part.text)))[part.segments addObject:Trim(part.text)];
   [texts addObjectsFromArray:part.segments];
  }return texts;
@@ -239,6 +244,21 @@ static NSData *OriginalWithControls(MTMessage *message){
  if(!self.eligible)return nil;if(translations&&(![translations isKindOfClass:NSArray.class]||translations.count!=self.texts.count))return nil;
  for(id v in translations)if(![v isKindOfClass:NSString.class]||[v length]>40000)return nil;
  if(!translations&&!controls)return self.original;if(!translations&&controls)return OriginalWithControls(self);MTPart *root=[MTPart parse:self.original depth:0];Choose(root);NSUInteger cursor=0;return [root render:translations cursor:&cursor key:self.key controls:controls];
+}
+-(NSString*)bodyTextForLanguageRecognition{
+ MTPart *root=[MTPart parse:self.original depth:0];if(root.malformed||root.protectedContent)return @"";
+ NSMutableString *body=[NSMutableString new];
+ for(MTPart *part in BodyParts(root)){
+  NSString *text=part.text;
+  if([part.type isEqual:@"text/html"]){
+   htmlDocPtr doc=HTML(text);NSMutableArray *texts=[NSMutableArray new];
+   if(doc){Collect(xmlDocGetRootElement(doc),nil,texts,YES);xmlFreeDoc(doc);}text=[texts componentsJoinedByString:@""];
+  }
+  if(body.length)[body appendString:@"\n"];
+  NSUInteger remaining=20000-body.length;
+  [body appendString:text.length>remaining?[text substringToIndex:remaining]:text];
+  if(body.length>=20000)break;
+ }return body;
 }
 @end
 

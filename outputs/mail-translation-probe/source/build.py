@@ -31,7 +31,7 @@ plist(app / "Contents/Info.plist", {
     "CFBundleDisplayName": "MailTrans",
     "CFBundleExecutable": "MailTrans",
     "CFBundlePackageType": "APPL",
-    "CFBundleVersion": "8", "CFBundleShortVersionString": "0.8",
+    "CFBundleVersion": "9", "CFBundleShortVersionString": "0.9",
     "CFBundleIconFile": "AppIcon",
     "LSMinimumSystemVersion": "26.4", "NSHighResolutionCapable": True, "LSUIElement": True,
     "CFBundleURLTypes": [{"CFBundleURLName": "MailTrans", "CFBundleURLSchemes": ["mailtranslationprobe"]}],
@@ -42,7 +42,7 @@ plist(ext / "Contents/Info.plist", {
     "CFBundleDisplayName": "MailTrans",
     "CFBundleExecutable": "MailTranslationProbeExtension",
     "CFBundlePackageType": "XPC!",
-    "CFBundleVersion": "8", "CFBundleShortVersionString": "0.8",
+    "CFBundleVersion": "9", "CFBundleShortVersionString": "0.9",
     "NSExtension": {
         "NSExtensionPointIdentifier": "com.apple.email.extension",
         "NSExtensionPrincipalClass": "MailTranslationProbeExtension",
@@ -144,7 +144,7 @@ helper = app / "Contents/Helpers/LanguageSetup.app"
 plist(helper / "Contents/Info.plist", {
     "CFBundleIdentifier": "local.codex.mailtranslationprobe.languages",
     "CFBundleName": "MailTrans 语言包", "CFBundleExecutable": "LanguageSetup", "CFBundlePackageType": "APPL",
-    "CFBundleVersion": "8", "CFBundleShortVersionString": "0.8", "LSMinimumSystemVersion": "26.4",
+    "CFBundleVersion": "9", "CFBundleShortVersionString": "0.9", "LSMinimumSystemVersion": "26.4",
     "NSHighResolutionCapable": True,
 })
 run(swift + [str(source / "LanguageSetup.swift"), "-o", str(helper / "Contents/MacOS/LanguageSetup")])

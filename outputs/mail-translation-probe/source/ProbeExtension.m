@@ -1,5 +1,6 @@
 #import <AppKit/AppKit.h>
 #import <MailKit/MailKit.h>
+#import <NaturalLanguage/NaturalLanguage.h>
 #import "MIMECore.h"
 
 // The extension only supplies reading data. It never edits or sends a mailbox message.
@@ -11,6 +12,20 @@
 - (MEDecodedMessage *)decodedMessageForMessageData:(NSData *)data {
     MTMessage *message = [MTMessage messageWithData:data];
     if (!message.eligible) return nil;
+    // Detect the original body, never the subject or a cached translated view.
+    // Returning nil leaves Chinese MIME, layout and Mail privacy behavior untouched.
+    NSString *body = [message bodyTextForLanguageRecognition];
+    NLLanguage language = [NLLanguageRecognizer dominantLanguageForString:body];
+    if ([language isEqual:NLLanguageSimplifiedChinese] || [language isEqual:NLLanguageTraditionalChinese]) return nil;
+    // A short Chinese reply can be outweighed by an English signature or quote.
+    // Conservatively leave a message starting with a Chinese paragraph untouched.
+    for (NSString *line in [body componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet]) {
+        NSString *paragraph = [line stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+        if (!paragraph.length) continue;
+        language = [NLLanguageRecognizer dominantLanguageForString:paragraph];
+        if ([language isEqual:NLLanguageSimplifiedChinese] || [language isEqual:NLLanguageTraditionalChinese]) return nil;
+        break;
+    }
     NSData *display = nil;
     @synchronized(MailTranslationProbeExtension.class) {
         NSURL *root = [self cacheRoot];
@@ -39,4 +54,3 @@
     completionHandler([[MEMessageEncodingResult alloc] initWithEncodedMessage:nil signingError:nil encryptionError:nil]);
 }
 @end
-

@@ -22,5 +22,27 @@ int main(void){@autoreleasepool {
  [cache restoreKey:message.key];
  if([extension decodedMessageForMessageData:source]==nil){fputs("FAIL: restored original must retain controls for switching back\n",stderr);failures++;}
  if(![[cache sourceForKey:message.key]isEqual:source]){fputs("FAIL: original source bytes changed\n",stderr);failures++;}
- [cache clear];if(failures)return 1;puts("PASS: controls in original and Chinese views, unchanged original MIME");return 0;
+ [cache clear];
+ NSArray *chineseBodies=@[
+  @"Content-Type: text/plain; charset=utf-8\r\n\r\n大家好，明天下午三点开会，请提前准备项目资料。会议结束后一起讨论下一步安排。",
+  @"Content-Type: text/html; charset=utf-8\r\n\r\n<html><body><h1>Project update</h1><p>大家好，明天下午三点开会，请提前准备项目资料。会议结束后一起讨论下一步安排。</p><img src='https://example.invalid/image.png'></body></html>",
+  @"Content-Type: text/plain; charset=utf-8\r\n\r\n各位同事，明天下午三點開會，請提前準備專案資料。會議結束後一起討論下一步安排。",
+  @"Content-Type: text/plain; charset=utf-8\r\n\r\n你好",
+  @"Content-Type: text/plain; charset=utf-8\r\n\r\n收到，谢谢。\r\n\r\nSent from my iPhone",
+  @"Content-Type: text/html; charset=utf-8\r\n\r\n<html><body><p>收到，谢谢。</p><blockquote>The workshop begins tomorrow morning. Please bring the project documents.</blockquote></body></html>",
+  @"Content-Type: text/html; charset=utf-8\r\n\r\n<html><body><pre>大家好，明天下午三点开会，请提前准备项目资料。会议结束后一起讨论下一步安排。</pre><p>This is an automated message.</p></body></html>",
+  @"Content-Type: text/html; charset=utf-8\r\n\r\n<html><body><p><span>明</span><span>天</span><span>下</span><span>午</span><span>三</span><span>点</span><span>开</span><span>会</span><span>请</span><span>大</span><span>家</span><span>提</span><span>前</span><span>准</span><span>备</span><span>项</span><span>目</span><span>资</span><span>料</span><span>并</span><span>讨</span><span>论</span><span>下</span><span>一</span><span>步</span><span>安</span><span>排</span></p><p>Thanks.</p></body></html>"
+ ];
+ for(NSString *body in chineseBodies){
+  NSData *input=[[@"Subject: English subject must not decide body language\r\n" stringByAppendingString:body]dataUsingEncoding:NSUTF8StringEncoding];
+  if([extension decodedMessageForMessageData:input]!=nil){fputs("FAIL: Chinese source must be left to Mail without a replacement MIME or controls\n",stderr);failures++;}
+  if([NSFileManager.defaultManager contentsOfDirectoryAtURL:root includingPropertiesForKeys:nil options:0 error:nil].count){fputs("FAIL: Chinese source must not write translation cache\n",stderr);failures++;}
+  [cache clear];
+ }
+ NSData *oldSource=[[chineseBodies.firstObject description]dataUsingEncoding:NSUTF8StringEncoding];
+ MTMessage *oldChinese=[MTMessage messageWithData:oldSource];
+ [cache rememberMessage:oldChinese];[cache setDisplay:[oldChinese renderTranslations:oldChinese.texts includeControls:YES] forKey:oldChinese.key];
+ if([extension decodedMessageForMessageData:oldSource]!=nil){fputs("FAIL: previously cached Chinese source must still bypass the extension\n",stderr);failures++;}
+ [cache clear];[NSFileManager.defaultManager removeItemAtURL:root error:nil];
+ if(failures)return 1;puts("PASS: Chinese source untouched; English original/translated controls and remote-content policy preserved");return 0;
 }}
