@@ -1,5 +1,7 @@
 #import <AppKit/AppKit.h>
 #import <stdio.h>
+#import <stdatomic.h>
+#import "MailLifecycle.h"
 
 @protocol LifecycleAPI
 - (instancetype)initWithMailBundleIdentifier:(NSString *)mailID hostBundleIdentifier:(NSString *)hostID hostURL:(NSURL *)url preferences:(NSUserDefaults *)preferences;
@@ -7,7 +9,23 @@
 - (void)stop;
 - (NSString *)mailSessionToken;
 @end
-static int failures;
+static _Atomic int failures;
+@interface MTMailLifecycle (ThreadContract)
+- (void)stopHost;
+- (void)ensureHost;
+@end
+@interface ThreadCheckedLifecycle:MTMailLifecycle
+@end
+@implementation ThreadCheckedLifecycle
+- (void)stopHost {
+    if(!NSThread.isMainThread){fputs("FAIL: async completion must terminate host on lifecycle's main thread\n",stderr);failures++;}
+    [super stopHost];
+}
+- (void)ensureHost {
+    if(!NSThread.isMainThread){fputs("FAIL: launch decisions must stay on lifecycle's main thread\n",stderr);failures++;}
+    [super ensureHost];
+}
+@end
 #define CHECK(condition,label) do {if(!(condition)){fprintf(stderr,"FAIL: %s\n",label);failures++;}}while(0)
 static BOOL Wait(BOOL(^condition)(void),NSTimeInterval seconds) {
     NSDate *deadline=[NSDate dateWithTimeIntervalSinceNow:seconds];
@@ -37,7 +55,8 @@ static NSURL *Fixture(NSURL *root,NSString *name,NSString *identifier,NSString *
     NSURL *exe=[mac URLByAppendingPathComponent:@"Fixture"];
     [NSFileManager.defaultManager copyItemAtPath:binary toPath:exe.path error:nil];
     [NSFileManager.defaultManager setAttributes:@{NSFilePosixPermissions:@0755}ofItemAtPath:exe.path error:nil];
-    NSDictionary *info=@{@"CFBundleIdentifier":identifier,@"CFBundleName":name,@"CFBundleExecutable":@"Fixture",@"CFBundlePackageType":@"APPL",@"CFBundleVersion":@"1",@"LSUIElement":@YES};
+    NSMutableDictionary *info=[@{@"CFBundleIdentifier":identifier,@"CFBundleName":name,@"CFBundleExecutable":@"Fixture",@"CFBundlePackageType":@"APPL",@"CFBundleVersion":@"1",@"LSUIElement":@YES}mutableCopy];
+    if([name isEqual:@"FixtureHost"]){info[@"MTFixtureStartDelay"]=@0.6;info[@"MTFixtureExitDelay"]=@1.0;}
     NSData *plist=[NSPropertyListSerialization dataWithPropertyList:info format:NSPropertyListXMLFormat_v1_0 options:0 error:nil];
     [plist writeToURL:[url URLByAppendingPathComponent:@"Contents/Info.plist"]atomically:YES];
     NSTask *sign=[NSTask new];sign.executableURL=[NSURL fileURLWithPath:@"/usr/bin/codesign"];sign.arguments=@[@"--sign",@"-",url.path];sign.standardError=NSFileHandle.fileHandleWithNullDevice;
@@ -46,6 +65,7 @@ static NSURL *Fixture(NSURL *root,NSString *name,NSString *identifier,NSString *
 int main(int argc,const char *argv[]) {@autoreleasepool {
     Class lifecycle=NSClassFromString(@"MTMailLifecycle");
     if(!lifecycle){fputs("FAIL: Mail lifecycle observer is not implemented\n",stderr);return 1;}
+    lifecycle=ThreadCheckedLifecycle.class;
     if(argc!=2){fputs("FAIL: fixture executable path required\n",stderr);return 1;}
     [NSApplication sharedApplication];[NSApp finishLaunching];
     NSString *suffix=NSUUID.UUID.UUIDString.lowercaseString;
@@ -84,6 +104,18 @@ int main(int argc,const char *argv[]) {@autoreleasepool {
     Pump(0.2);CHECK(Apps(hostID).count==1,"host stays until last Mail instance closes");
     QuitAll(mailID);
     CHECK(Wait(^BOOL{return Apps(hostID).count==0;},8),"last Mail quit normally terminates host");
+    Open(mail,NO);
+    CHECK(Wait(^BOOL{return Apps(hostID).count==1;},8),"host starts before rapid Mail restart");
+    Pump(0.8);pid_t retiringHost=Apps(hostID).firstObject.processIdentifier;
+    QuitAll(mailID);CHECK(Wait(^BOOL{return Apps(mailID).count==0;},5),"Mail exits before delayed host");
+    Open(mail,NO);
+    CHECK(Wait(^BOOL{return Apps(hostID).count==1&&Apps(hostID).firstObject.processIdentifier!=retiringHost;},8),"rapid Mail restart must replace the terminating previous host");
+    QuitAll(mailID);CHECK(Wait(^BOOL{return Apps(hostID).count==0;},8),"replacement host exits with Mail");
+    // Force the asynchronous launch completion to arrive after Mail's exit.
+    Open(mail,NO);CHECK(Wait(^BOOL{return Apps(hostID).count==1;},8),"delayed host process begins launch");
+    QuitAll(mailID);CHECK(Wait(^BOOL{return Apps(mailID).count==0;},5),"Mail closes during host launch");
+    CHECK(Wait(^BOOL{return Apps(hostID).count==0;},8),"pending launch cannot leave host behind");
+    Pump(0.8);
     Open(host,NO);
     CHECK(Wait(^BOOL{return Apps(hostID).count==0;},5),"late host launch is stopped while Mail is closed");
     [observer stop];Open(mail,NO);
