@@ -1,0 +1,57 @@
+name: Bug report / 问题反馈
+description: Report a reproducible MailTrans problem / 提交可复现的问题
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English and Chinese are welcome. Search existing issues first.
+        Use synthetic email only. Never attach real messages, mailbox/cache exports, or unredacted screenshots.
+        For vulnerabilities, follow SECURITY.md and use private reporting.
+        欢迎中文或英文。先搜索已有问题；仅提供人工邮件，不上传真实邮件、缓存或未清理截图。漏洞请按 SECURITY.md 私密反馈。
+  - type: input
+    id: version
+    attributes:
+      label: MailTrans version or commit / 版本或提交
+      placeholder: "0.9 / commit SHA"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: macOS version, Mail version, chip, and Xcode version if building.
+      placeholder: "macOS 26.4, Mail 16.0, Apple Silicon, Xcode 26.6"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      description: Include a minimal synthetic example if relevant. Do not paste private email.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior / 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics / 清理后的诊断信息
+      description: Optional logs, warnings, or synthetic screenshots. Remove personal paths, addresses, and message content.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check / 隐私确认
+      options:
+        - label: This report contains no real email, cache exports, credentials, or private information. / 不包含真实邮件、缓存导出、凭据或私人信息。
+          required: true
