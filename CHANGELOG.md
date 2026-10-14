@@ -2,7 +2,9 @@
 
 User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/MailTrans/commits/main/) for implementation details.
 
-## Unreleased
+## v0.9.0 — First public preview (2026-10-14)
+
+First GitHub pre-release, distributed as source. Application version remains 0.9 / build 9. Includes the 0.9 behavior and the earlier features below.
 
 - Add English and Chinese project pages, an illustrated workflow, installation/update/uninstall guides, and an architecture overview.
 - Add contribution and security policies, issue forms, a pull request template, and the MIT license.
