@@ -28,7 +28,7 @@ python3 outputs/mail-translation-probe/source/build.py
 python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
-构建会运行 `CoreTests`、`AppTests`、`ExtensionTests`、`LifecycleTests`，生成并临时签名 `outputs/mail-translation-probe/MailTrans.app`，验证签名。worker 检查需要先完成应用安装和英中语言包准备；本机安装副本已通过该检查。2026-10-14 验证时，Documents 构建路径中的相同 worker 返回 `model_missing`，而 `/Applications` 副本通过；具体原因尚未确认，不将构建路径的实际翻译检查记为通过。
+构建会运行 `CoreTests`、`AppTests`、`ExtensionTests`、`LifecycleTests`，生成并临时签名 `outputs/mail-translation-probe/MailTrans.app`，验证签名；另以独立应用包和嵌套 helper 检查真实跨进程偏好共享。worker 检查需要先完成应用安装和英中语言包准备；本机安装副本已通过该检查。2026-10-14 验证时，Documents 构建路径中的相同 worker 返回 `model_missing`，而 `/Applications` 副本通过；具体原因尚未确认，不将构建路径的实际翻译检查记为通过。
 
 构建不会安装或替换 `/Applications` 中的应用。安装更新请遵循交接文档；日常运行使用 `/Applications/MailTrans.app`。当前为本机开发版，尚未公证或进行跨机器验证。
 
