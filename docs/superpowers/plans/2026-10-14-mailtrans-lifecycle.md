@@ -42,10 +42,10 @@
 
 **Interfaces:** Host and helper share lifecycle preferences; management script enables bundled helper via user LaunchAgent.
 
-- [ ] Add failing host shutdown checks using real child processes and isolated cache/preferences.
-- [ ] Rename visible app surfaces; connect manual quit marker, owned-task cancellation and stop guards.
-- [ ] Package/sign helper and renamed MailTrans.app; build includes lifecycle test suite.
-- [ ] Implement enable/disable/status and verify via actual reversible enable/status/disable checks at deployment.
-- [ ] Full build/test/signature/worker verification; one independent branch review.
-- [ ] Back up 0.7, install MailTrans, enable LaunchAgent, verify actual Mail launch/quit/manual quit, then restore normal running state.
-- [ ] Update handoff/tests, integrate into main and push GitHub.
+- [x] Add failing host shutdown checks using real child processes and isolated cache/preferences.
+- [x] Rename visible app surfaces; connect manual quit marker, owned-task cancellation and stop guards.
+- [x] Package/sign helper and renamed MailTrans.app; build includes lifecycle test suite.
+- [x] Implement enable/disable/status and verify via actual reversible enable/status/disable checks at deployment.
+- [x] Full build/test/signature/worker verification; one independent branch review.
+- [x] Back up 0.7, install MailTrans, enable LaunchAgent, verify actual Mail launch/quit/manual quit, then restore normal running state.
+- [x] Update handoff/tests, integrate into main and push GitHub.

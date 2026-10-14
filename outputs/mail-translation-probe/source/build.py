@@ -9,6 +9,7 @@ import os
 import plistlib
 import shutil
 import struct
+import sys
 import subprocess
 import zlib
 
@@ -120,6 +121,8 @@ compiler = ["/usr/bin/xcrun", "--sdk", "macosx", "clang", "-fobjc-arc", "-fblock
     "-I"+sdk+"/usr/include/libxml2", "-lxml2", "-framework", "Cocoa", "-framework", "MailKit", "-framework", "NaturalLanguage"]
 core = str(source / "MIMECore.m")
 life = str(source / "MailLifecycle.m")
+run(compiler + [life, str(source / "PreferencesFixture.m"), "-o", str(work / "preferences-fixture")])
+run([sys.executable, str(source / "verify_lifecycle_preferences.py"), str(work / "preferences-fixture")])
 run(compiler + [str(source / "LifecycleFixture.m"), "-o", str(work / "lifecycle-fixture")])
 run(compiler + [life, str(source / "LifecycleTests.m"), "-o", str(work / "lifecycle-tests")])
 run([str(work / "lifecycle-tests"), str(work / "lifecycle-fixture")])

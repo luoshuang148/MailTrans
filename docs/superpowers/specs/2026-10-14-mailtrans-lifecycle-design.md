@@ -8,6 +8,8 @@
 
 监听器启动时检查已运行的 Mail；Mail 完全退出后正常请求 MailTrans 退出。关窗口不等同于退出 Mail。以 bundle identifier 识别 Mail，防止同名程序误触发。重复通知或多个 Mail 实例不重复启动主应用；最后一个 Mail 实例退出才关闭主应用。异步启动晚于 Mail 退出时立即关闭迟到的主应用。
 
+跨进程偏好通过统一工厂创建：自身 Bundle ID 使用 standardUserDefaults，其他域使用 suite。用实际应用包/嵌套 helper/CLI 覆盖该系统边界。
+
 每个 Mail 会话由进程 ID 和启动时间标识。手动退出保存本次会话抑制标记，监听器重启也不重新拉起；下次 Mail 启动产生新会话，不受旧标记影响。明确手动打开 MailTrans 可恢复本次使用。退出时停止自身 worker / 语言包任务并清理缓存，阻止迟到结果写回。
 
 新增 enable/disable/status 管理脚本。构建本身不安装 LaunchAgent；本次部署按用户授权安装并启用。后台监听器是实现下一次自动启动所需的辅助进程，停用脚本会移除其 LaunchAgent。

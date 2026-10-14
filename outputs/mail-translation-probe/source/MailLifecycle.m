@@ -30,6 +30,12 @@ static BOOL Suppressed(NSUserDefaults *preferences,NSString *session) {
 @property NSUInteger generation;
 @end
 @implementation MTMailLifecycle
++ (NSUserDefaults *)preferencesForDomain:(NSString *)domain {
+    // Foundation explicitly rejects using the current bundle ID as a suite.
+    // Both the host and its nested executable can have that bundle identity.
+    if([NSBundle.mainBundle.bundleIdentifier isEqual:domain])return NSUserDefaults.standardUserDefaults;
+    return [[NSUserDefaults alloc]initWithSuiteName:domain];
+}
 - (instancetype)initWithMailBundleIdentifier:(NSString *)mailID hostBundleIdentifier:(NSString *)hostID hostURL:(NSURL *)url preferences:(NSUserDefaults *)preferences {
     if((self=[super init])){_mailID=mailID.copy;_hostID=hostID.copy;_hostURL=url.URLByResolvingSymlinksInPath;_preferences=preferences;_mails=[NSMutableDictionary new];_tokens=[NSMutableDictionary new];_hosts=@[];_retiringHosts=[NSMutableSet new];}
     return self;

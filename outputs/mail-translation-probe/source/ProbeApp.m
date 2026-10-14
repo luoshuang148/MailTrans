@@ -33,9 +33,10 @@
     return menu;
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-    self.lifecyclePreferences=[[NSUserDefaults alloc]initWithSuiteName:MTLifecycleDefaultsDomain];
+    self.lifecyclePreferences=[MTMailLifecycle preferencesForDomain:MTLifecycleDefaultsDomain];
     if(!self.mailSessionToken.length){[NSApp terminate:nil];return;}
     [self.lifecyclePreferences removeObjectForKey:MTManualQuitMailSession];
+    [self.lifecyclePreferences synchronize];
     self.providerID=@"apple-local";self.gate=[MTRequestGate new];self.automaticQueue=[MTTranslationQueue new];
     NSString *path=[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Containers/local.codex.mailtranslationprobe.extension/Data/Library/Caches/MailTranslation"];
     self.cache=[[MTCache alloc]initWithRoot:[NSURL fileURLWithPath:path isDirectory:YES]];
