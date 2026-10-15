@@ -2,6 +2,17 @@
 
 User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/MailTrans/commits/main/) for implementation details.
 
+## v0.10.0 — Public development preview (2026-10-15)
+
+- Add native first-run setup for Mail, extension registration guidance, model availability, and optional automatic launch. Setup remains available with Mail closed.
+- Add a persistent automatic-English-translation toggle, current-task cancellation, retry of the last failed message, and visible menu icon error state.
+- Bound translation workers to 120 seconds / 8 MiB output and terminate owned children during cancellation/shutdown, including SIGTERM-resistant processes.
+- Add settings-based lifecycle management, GitHub update/help links, and confirmed exact-app uninstall without a Python dependency.
+- Add portable packaging tests, seven native test suites, model-status checks, GitHub CI, development ZIP/checksum packaging, and a compatibility checklist.
+- App remains ad-hoc signed and unnotarized; independent physical-Mac installation and live translation compatibility require separate validation.
+
+中文：新增首次设置、暂停自动翻译、取消与失败重试、超时恢复、图形化自动联动/卸载，以及开发版 ZIP、校验文件和自动化检查。未完成分发公证与独立 Mac 验证。
+
 ## v0.9.0 — First public preview (2026-10-14)
 
 First GitHub pre-release, distributed as source. Application version remains 0.9 / build 9. Includes the 0.9 behavior and the earlier features below.

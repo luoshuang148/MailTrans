@@ -8,14 +8,33 @@
 @implementation TestApplication
 -(void)terminate:(id)sender {self.terminationRequested=YES;if(self.terminationObserver)self.terminationObserver();}
 @end
+@interface ProbeAppDelegate (PublicPreviewTests)
+- (BOOL)automaticTranslationEnabled;
+- (void)toggleAutomaticTranslation:(id)sender;
+- (void)cancelCurrentTranslation:(id)sender;
+- (void)retryLastFailure:(id)sender;
+- (void)showSetup;
+- (NSUserDefaults *)appPreferences;
+- (NSURL *)cacheURL;
+@end
 @interface UIProbe:ProbeAppDelegate
 @property NSDictionary *workerResult;
+@property NSUInteger workerCalls;
+@property NSUInteger setupCalls;
 @end
 @implementation UIProbe
 -(void)activateMail{}
+-(void)showSetup{self.setupCalls++;}
+-(NSUserDefaults *)appPreferences{return self.lifecyclePreferences;}
+-(NSURL *)cacheURL{return [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[@"mailtrans-startup-test-" stringByAppendingString:NSUUID.UUID.UUIDString]] isDirectory:YES];}
 -(void)reloadMail{}
 -(NSString *)mailSessionToken{return @"test-mail-session";}
--(NSDictionary*)runWorker:(MTMessage*)message{return self.workerResult?:@{@"errorCode":@"launch_failed",@"message":@"Test worker unavailable"};}
+-(NSDictionary*)runWorker:(MTMessage*)message{self.workerCalls++;return self.workerResult?:@{@"errorCode":@"launch_failed",@"message":@"Test worker unavailable"};}
+@end
+@interface ClosedMailProbe:UIProbe
+@end
+@implementation ClosedMailProbe
+-(NSString *)mailSessionToken{return @"";}
 @end
 int main(void) {@autoreleasepool {
  [TestApplication sharedApplication];NSUInteger initialWindows=NSApp.windows.count;
@@ -89,6 +108,50 @@ int main(void) {@autoreleasepool {
   if(![(TestApplication *)NSApp terminationRequested]||!savedBeforeExit){fputs("FAIL: manual quit must save suppression before requesting normal termination\n",stderr);okay=NO;}
   ((TestApplication *)NSApp).terminationObserver=nil;
   [preferences removePersistentDomainForName:suite];
+ }
+ // New-user controls must not depend on real Mail, models, or production preferences.
+ if(![delegate respondsToSelector:@selector(automaticTranslationEnabled)]||![delegate respondsToSelector:@selector(retryLastFailure:)]){
+  fputs("FAIL: persistent automatic pause and explicit failure retry are missing\n",stderr);okay=NO;
+ }else{
+  NSString *suite=[@"local.mailtrans.tests.controls."stringByAppendingString:NSUUID.UUID.UUIDString];
+  NSUserDefaults *prefs=[[NSUserDefaults alloc]initWithSuiteName:suite];
+  UIProbe *control=[UIProbe new];control.lifecyclePreferences=prefs;
+  control.cache=[[MTCache alloc]initWithRoot:[root URLByAppendingPathComponent:@"controls"]];control.gate=[MTRequestGate new];control.automaticQueue=[MTTranslationQueue new];
+  MTMessage *mail=[MTMessage messageWithData:[english dataUsingEncoding:NSUTF8StringEncoding]];[control.cache rememberMessage:mail];
+  if(!control.automaticTranslationEnabled){fputs("FAIL: automatic translation must default to enabled\n",stderr);okay=NO;}
+  [control toggleAutomaticTranslation:nil];[control scheduleAutomaticTranslations];
+  if(control.automaticTranslationEnabled||control.busy||control.workerCalls){fputs("FAIL: paused mode must not enqueue automatic work\n",stderr);okay=NO;}
+  UIProbe *reopened=[UIProbe new];reopened.lifecyclePreferences=prefs;
+  if(reopened.automaticTranslationEnabled){fputs("FAIL: pause must persist across host instances\n",stderr);okay=NO;}
+  control.workerResult=@{@"translations":@[@"研讨会已改至周四上午，请携带修订日程。"]};
+  [control translateKey:mail.key];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
+  while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+  if(control.workerCalls!=1||![control.cache displayForKey:mail.key]){fputs("FAIL: manual translation must still work while paused\n",stderr);okay=NO;}
+  [control.cache clear];[control.cache rememberMessage:mail];control.workerResult=@{@"errorCode":@"timeout",@"message":@"Timed out"};
+  [control translateKey:mail.key];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
+  while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+  if(![[control valueForKey:@"lastFailedKey"]isEqual:mail.key]||![[control valueForKey:@"hasFailure"]boolValue]){fputs("FAIL: timeout must retain exact retry key and visible error state\n",stderr);okay=NO;}
+  control.workerResult=@{@"translations":@[@"重试后的译文。"]};[control retryLastFailure:nil];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
+  while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+  if(![control.cache displayForKey:mail.key]||[[control valueForKey:@"hasFailure"]boolValue]){fputs("FAIL: explicit retry must recover the same message and clear error state\n",stderr);okay=NO;}
+  [control setValue:mail.key forKey:@"lastFailedKey"];[control.cache clear];NSUInteger calls=control.workerCalls;[control retryLastFailure:nil];
+  if(control.workerCalls!=calls||![control.statusText containsString:@"重新打开"]){fputs("FAIL: expired retry must request reopening rather than translate another message\n",stderr);okay=NO;}
+  [control.cache rememberMessage:mail];control.workingKey=mail.key;control.busy=YES;[control setValue:@YES forKey:@"workingAutomatic"];
+  NSUUID *token=[control.gate beginKey:mail.key];
+  // Persisted mode is paused; enable then pause an active automatic operation.
+  [prefs setBool:YES forKey:@"MTAutomaticTranslationEnabled"];[control toggleAutomaticTranslation:nil];
+  if([control.gate isCurrent:token forKey:mail.key]){fputs("FAIL: pausing automatic translation must invalidate active results\n",stderr);okay=NO;}
+  [control.cache clear];[prefs removePersistentDomainForName:suite];
+ }
+ if(![delegate respondsToSelector:@selector(showSetup)]||![delegate respondsToSelector:@selector(appPreferences)]||![delegate respondsToSelector:@selector(cacheURL)]){
+  fputs("FAIL: setup must remain accessible when Mail is closed\n",stderr);okay=NO;
+ }else{
+  NSString *suite=[@"local.mailtrans.tests.setup."stringByAppendingString:NSUUID.UUID.UUIDString];
+  ClosedMailProbe *closed=[ClosedMailProbe new];closed.lifecyclePreferences=[[NSUserDefaults alloc]initWithSuiteName:suite];
+  ((TestApplication *)NSApp).terminationRequested=NO;[closed applicationDidFinishLaunching:[NSNotification notificationWithName:NSApplicationDidFinishLaunchingNotification object:NSApp]];
+  if(((TestApplication *)NSApp).terminationRequested||closed.setupCalls!=1){fputs("FAIL: launch without Mail must show setup and remain running\n",stderr);okay=NO;}
+  [closed.cache clear];[closed.lifecyclePreferences removePersistentDomainForName:suite];
+  if(closed.statusItem)[NSStatusBar.systemStatusBar removeStatusItem:closed.statusItem];
  }
  if(!okay)return 1;
  puts("PASS: menu-only UI, English automatic policy, language setup guidance, cached switching and safe cache clearing");return 0;

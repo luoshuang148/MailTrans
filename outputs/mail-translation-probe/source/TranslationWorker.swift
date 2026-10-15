@@ -64,6 +64,24 @@ struct AppleLocalProvider: TranslationProvider {
         exit(code)
     }
     static func main() async {
+        if CommandLine.arguments.dropFirst() == ["--model-status"] {
+            let availability = LanguageAvailability(preferredStrategy: .lowLatency)
+            let status: String
+            switch await availability.status(from: Locale.Language(identifier: "en"),
+                                             to: Locale.Language(identifier: "zh-Hans")) {
+            case .installed: status = "installed"
+            case .supported: status = "supported"
+            case .unsupported: status = "unsupported"
+            @unknown default: status = "unknown"
+            }
+            // Setup is read-only: never consume MIME input or initiate a translation.
+            let result = ["source": "en", "target": "zh-Hans", "status": status]
+            if let data = try? JSONEncoder().encode(result) {
+                FileHandle.standardOutput.write(data)
+                FileHandle.standardOutput.write(Data([10]))
+            }
+            return
+        }
         do {
             let bytes = FileHandle.standardInput.readDataToEndOfFile()
             guard bytes.count <= 2_000_000 else { throw ProviderFailure.badRequest }

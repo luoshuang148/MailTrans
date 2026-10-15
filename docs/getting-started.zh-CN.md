@@ -2,7 +2,7 @@
 
 [首页](../README.zh-CN.md) · [English](getting-started.md)
 
-0.9 是需要从源码构建的实验版本。目前没有经过正式签名、公证的下载包，跨机器安装尚未验证。
+0.10 为开发预发布版。[Release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0) 提供应用 ZIP 与 SHA-256 文件，应用为临时签名，**没有 Developer ID 分发签名或公证**，下载后的系统接受情况及独立 Mac 安装尚待验证。系统阻止时可从源码构建，不关闭系统级安全保护。
 
 ## 环境要求
 
@@ -11,11 +11,11 @@
 | 硬件 | Apple Silicon；Swift worker 以 `arm64` 为目标构建 |
 | 系统 | 最低 macOS 26.4；已验证 macOS 26.4 |
 | 邮件客户端 | Apple Mail；已验证 Mail 16.0 |
-| 开发工具 | 完整 Xcode 位于 `/Applications/Xcode.app`；已验证 Xcode 26.6 / macOS SDK 26.5 |
-| 构建工具 | Python 3，以及 macOS 自带的 `sips`、`iconutil`、`codesign` |
+| 开发工具（仅源码构建） | 完整 Xcode 位于 `/Applications/Xcode.app`；已验证 Xcode 26.6 / macOS SDK 26.5 |
+| 构建工具（仅源码构建） | Python 3，以及 macOS 自带的 `sips`、`iconutil`、`codesign` |
 | 语言模型 | 苹果提供的源语言 → 简体中文模型；首次可能需要下载 |
 
-仅安装 Command Line Tools 不属于已说明的构建环境。满足最低版本要求不代表该系统或工具链已经经过验证。
+运行应用本身不需要 Python 或 Xcode。源码构建使用 `DEVELOPER_DIR` 或 `xcode-select` 选中的工具链，也支持 `--developer-dir PATH`。仅安装 Command Line Tools 不属于已说明的完整构建环境。满足最低版本要求不代表该系统或工具链已经经过验证。
 
 ## 从源码构建
 
@@ -25,7 +25,7 @@ cd MailTrans
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
-脚本运行 `CoreTests`、`AppTests`、`ExtensionTests`、`LifecycleTests` 及真实跨进程偏好共享检查，编译宿主、扩展、翻译 worker 与辅助程序，并临时签名及验证应用包。
+脚本运行七组原生测试（核心、宿主、扩展、生命周期、子进程、应用管理、设置）、真实跨进程偏好检查及模型状态协议检查，编译宿主、扩展、翻译 worker 与辅助程序，并临时签名及验证应用包。
 
 产物为 `outputs/mail-translation-probe/MailTrans.app`，中间文件位于被 Git 忽略的 `work/mail-real/`。构建不安装应用、不启用扩展、不下载模型，也不安装 LaunchAgent。构建通过不等于实际翻译和 Mail 界面验证通过。
 
@@ -33,32 +33,21 @@ python3 outputs/mail-translation-probe/source/build.py
 
 已有安装时，请先阅读[更新](#更新)。
 
-1. 退出 Mail。在 Finder 中将生成的 `MailTrans.app` 复制到 `/Applications`，保留一个正式安装副本，日常运行使用该副本。
-2. 在终端检查安装包签名：
+1. 从[开发版 Release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0) 下载应用 ZIP 与配套 `.sha256` 文件。在下载目录执行 `shasum -a 256 -c MailTrans-0.10.0-macos-arm64-development.zip.sha256` 核对完整性，再用 macOS 归档实用工具解压。源码用户可使用自己的构建产物。
+2. 将 `MailTrans.app` 移入 `/Applications`，打开该副本。不要从下载目录或临时转移路径启用自动联动。临时签名只验证包完整性，不提供开发者身份；macOS 阻止时，请反馈准确提示或从源码构建，不关闭系统级保护。
+3. 首次显示 **MailTrans 设置**，Mail 尚未运行也可使用。点击**打开“邮件”**，在**邮件 → 设置 → 扩展**中勾选 **MailTrans**。设置页的注册检查不能证明已勾选，仍需在 Mail 中确认。
+4. 查看英中语言包状态，点击**准备英中语言包**打开苹果原生准备窗口。首次可能需要下载；取消则保留原文。
+5. 按需勾选**随“邮件”自动启动和退出**，无需 Python。点击**完成设置**。以后可从菜单栏的**设置与帮助…**再次打开。
+6. 点击**打开示例邮件**，检查自动翻译、**显示原文**、**翻译为中文**以及两种视图中的表格、内嵌图片与链接。具体译文可能随苹果模型变化。
 
-   ```sh
-   codesign --verify --deep --strict '/Applications/MailTrans.app'
-   ```
+找不到已安装扩展时，可用以下高级检查，再重启 Mail 并确认扩展开关：
 
-   此命令验证应用包完整性；临时签名不提供 Developer ID 身份或公证。失败时参见[常见问题](#常见问题)。
-3. 先打开 Mail，再打开 `/Applications/MailTrans.app`；Mail 未运行时宿主会立即退出。在**邮件 → 设置 → 扩展**中勾选 **MailTrans**。找不到扩展时，注册安装副本并重启 Mail：
+```sh
+pluginkit -a '/Applications/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex'
+codesign --verify --deep --strict '/Applications/MailTrans.app'
+```
 
-   ```sh
-   pluginkit -a '/Applications/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex'
-   ```
-
-4. 打开随仓库提供的人工测试邮件：
-
-   ```sh
-   open -a Mail outputs/mail-translation-probe/layout-sample.eml
-   ```
-
-5. 如果缺少英中模型，点击**翻译为中文**，按苹果的原生提示准备语言包。自动翻译不会静默下载模型，取消则保留原文。
-6. 语言包准备后重新加载邮件，检查自动翻译、**显示原文**、**翻译为中文**，以及两种视图中的表格、内嵌图片与链接。具体译文可能随苹果模型变化。
-
-MailKit 权限提示可能提及读取所有邮件、修改发出的邮件。本工具实现阅读时的译文显示，不发送、转发邮件或向邮箱写回修改，不需要辅助功能、AppleScript 自动化或全磁盘访问权限。
-
-应用尚未公证。若 macOS 阻止启动或无法启用扩展，请提供准确报错和系统版本，不要关闭系统级安全保护。其他机器的安装属于待验证范围。
+临时签名验证不能代替公证或跨机器验证。MailKit 的权限提示可能提及读取所有邮件、修改发出邮件；本工具仅实现阅读时的译文显示，不发送、转发或向邮箱写回修改，不需要辅助功能、AppleScript 自动化或全磁盘访问权限。
 
 ## 日常使用
 
@@ -67,18 +56,20 @@ MailKit 权限提示可能提及读取所有邮件、修改发出的邮件。本
 - **原文视图**：点击**翻译为中文**切回译文。选择原文后，有效缓存期间不会被尚未完成的自动任务覆盖。
 - **中文原文**：没有控制条，不写翻译缓存。识别依据正文，中文开头的回复也保守保留原样。
 - **其他源语言**：手动点击**翻译为中文**，能否翻译取决于苹果支持的语言组合。
-- **菜单栏**：提供**清空本地缓存**、**重新加载当前邮件**和**退出 MailTrans**；悬停图标可看状态。
+- **自动翻译**：菜单中的**自动翻译英文邮件**默认开启，关闭后记住选择；暂停期间仍可手动翻译及切换缓存译文。
+- **取消与重试**：**取消当前翻译**停止当前任务；**重试上次失败的邮件**只重试对应的缓存邮件，缓存过期会提示重新打开。翻译 worker 在 120 秒后超时，保留原文。
+- **状态与菜单**：错误会显示提醒图标与悬停说明，暂停会显示暂停图标。还可清空缓存、重新加载当前邮件、打开**设置与帮助…**或退出。
 
 ## 可选自动联动
 
-安装应用后，在仓库根目录执行：
+可直接在**设置与帮助…**中启用或关闭自动联动。开发者仍可使用原 CLI；安装应用后，在仓库根目录执行：
 
 ```sh
 python3 outputs/mail-translation-probe/source/manage_lifecycle.py enable
 python3 outputs/mail-translation-probe/source/manage_lifecycle.py status
 ```
 
-这会在 `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist` 安装当前用户的 LaunchAgent。无界面的 `MailTransLifecycle` 监听器观察应用进程变化，等待 Mail 启动；菜单栏主程序随 Mail 启动和退出。关闭 Mail 窗口不等于退出 Mail。
+这会在 `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist` 安装当前用户的 LaunchAgent。无界面的 `MailTransLifecycle` 监听器观察应用进程变化，等待 Mail 启动；菜单栏主程序随 Mail 启动和退出。关闭 Mail 窗口不等于退出 Mail。Mail 关闭时手动打开 MailTrans，可保留设置窗口。
 
 手动退出 MailTrans 后，本次 Mail 会话保持退出，即使监听器重启也不会重新拉起；下次重新启动 Mail 恢复自动联动，也可手动打开 MailTrans 立即恢复。
 
@@ -92,9 +83,9 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
 
 ## 更新
 
-1. 已启用自动联动时，先运行上面的 `disable` 命令。
+1. 已启用自动联动时，先在设置中关闭，或运行上面的开发者 `disable` 命令。
 2. 在 Mail 设置中取消勾选 MailTrans，退出 Mail，并从菜单退出 MailTrans，等待相关进程结束。
-3. 将旧应用备份到 `/Applications` 以外，更新源码，并用 `build.py` 重新构建。
+3. 将旧应用备份到 `/Applications` 以外，下载、校验并解压新版 ZIP；也可更新源码后用 `build.py` 重新构建。
 4. 替换前移除旧安装副本及构建副本的扩展注册：
 
    ```sh
@@ -124,8 +115,12 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
 
 ## 卸载
 
+图形界面方式：先退出 Mail，若 MailTrans 跟随退出则手动重新打开。进入**设置与帮助… → 卸载 MailTrans…**，核对具体应用路径后确认。程序会先停用监听器、注销扩展，再仅将该应用移入废纸篓，并清空翻译缓存。取消不做操作；停用或注销失败时保留应用并显示错误。
+
+手动卸载方式：
+
 1. 从菜单清空本地缓存。
-2. 删除应用前执行 `manage_lifecycle.py disable`，完成前保留源码目录。
+2. 删除应用前在设置中停用自动联动，或执行 `manage_lifecycle.py disable`；使用 CLI 时完成前保留源码目录。
 3. 在 Mail 设置中停用扩展，退出 Mail 与 MailTrans。
 4. 用上面的 `pluginkit -r` 命令移除安装副本的扩展注册，将 `/Applications/MailTrans.app` 移至废纸篓。
 5. 强制结束后若有残留，仅在 Mail 与 MailTrans 停止时删除上述 `MailTranslation` 缓存目录。

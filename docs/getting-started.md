@@ -2,7 +2,7 @@
 
 [Home](../README.md) · [简体中文](getting-started.zh-CN.md)
 
-MailTrans 0.9 is an experimental source-build application. Cross-machine installation has not been verified, and no signed/notarized download is currently published.
+MailTrans 0.10 is an experimental development preview. The [release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0) provides an ad-hoc signed app ZIP and SHA-256 file. It is **not Developer ID signed or notarized**; downloaded-app acceptance and independent Mac installation remain unverified. If macOS blocks the preview, build from source rather than disabling security controls.
 
 ## Requirements
 
@@ -11,11 +11,11 @@ MailTrans 0.9 is an experimental source-build application. Cross-machine install
 | Hardware | Apple Silicon; the Swift worker is built for `arm64` |
 | Operating system | macOS 26.4 minimum; tested on macOS 26.4 |
 | Mail | Apple Mail; tested with Mail 16.0 |
-| Toolchain | Full Xcode installed at `/Applications/Xcode.app`; tested with Xcode 26.6 and macOS SDK 26.5 |
-| Build scripting | Python 3, plus macOS tools including `sips`, `iconutil`, and `codesign` |
+| Toolchain (source builds only) | Full Xcode installed at `/Applications/Xcode.app`; tested with Xcode 26.6 and macOS SDK 26.5 |
+| Build scripting (source builds only) | Python 3, plus macOS tools including `sips`, `iconutil`, and `codesign` |
 | Translation models | Apple's source-language → Simplified Chinese model; an initial download may be needed |
 
-Command Line Tools alone are not the documented build environment. A newer operating system or toolchain meeting the minimum version does not imply that it has been tested.
+The app itself does not require Python or Xcode. Source builds use the selected `DEVELOPER_DIR` or `xcode-select` toolchain; `--developer-dir PATH` is also supported. Command Line Tools alone are not the documented full-app build environment. A newer operating system or toolchain meeting the minimum version does not imply that it has been tested.
 
 ## Build from source
 
@@ -25,7 +25,7 @@ cd MailTrans
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
-The script runs `CoreTests`, `AppTests`, `ExtensionTests`, `LifecycleTests`, and a cross-process preferences check, then compiles and ad-hoc signs the application, extension, translation worker, and helpers. It verifies the generated package's signature.
+The script runs seven native suites (core, app, extension, lifecycle, process runner, management, setup), a cross-process preferences check, and a model-status protocol check, then compiles and ad-hoc signs the application, extension, translation worker, and helpers. It verifies the generated package's signature.
 
 Output: `outputs/mail-translation-probe/MailTrans.app`. Intermediate files are kept in the ignored `work/mail-real/` directory. The build does not install the app, enable the Mail extension, download models, or install a LaunchAgent. Build success is separate from live translation and Mail rendering verification.
 
@@ -33,32 +33,23 @@ Output: `outputs/mail-translation-probe/MailTrans.app`. Intermediate files are k
 
 For an existing installation, follow [Update](#update) first.
 
-1. Quit Mail before installing. In Finder, copy the generated `MailTrans.app` to `/Applications`. Keep a single installed copy and run that copy rather than the build output.
-2. Verify the installed package from Terminal:
+1. Download the app ZIP and its matching `.sha256` file from the [development release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0). In the download folder, check `shasum -a 256 -c MailTrans-0.10.0-macos-arm64-development.zip.sha256`, then extract the ZIP with Archive Utility. Source builders can use their generated app instead.
+2. Move `MailTrans.app` to `/Applications` and open that copy. Do not enable automatic launch from Downloads or a temporary/translocated path. The development signature checks integrity, not publisher identity. If macOS blocks launch, report the exact message or build from source; do not disable system-wide protections.
+3. First-run **MailTrans 设置** (Setup) works even with Mail closed. Use **打开“邮件”** to open Mail, then go to **Mail → Settings → Extensions** and enable **MailTrans**. The setup registration check cannot prove that Mail's enable checkbox is on; confirm it there.
+4. Check the English→Chinese model status. **准备英中语言包** opens Apple's native model preparation; initial preparation may require a download. Cancelling preserves the original message.
+5. Optionally enable **随“邮件”自动启动和退出**. This installs only MailTrans's per-user watcher; it does not need Python. Click **完成设置** to finish. Reopen this window anytime through **设置与帮助…** in the menu bar.
+6. Use **打开示例邮件** to check the synthetic sample. Compare automatic translation, **显示原文** and **翻译为中文**, as well as the table, embedded image, and link. Exact wording can vary with Apple's model.
 
-   ```sh
-   codesign --verify --deep --strict '/Applications/MailTrans.app'
-   ```
+If the installed extension is missing, an advanced registration check is:
 
-   This checks bundle integrity; ad-hoc signing does not provide Developer ID identity or notarization. If verification fails, see [Troubleshooting](#troubleshooting).
-3. Open Mail first, then open `/Applications/MailTrans.app`. The host exits immediately when Mail is not running. In **Mail → Settings → Extensions**, enable **MailTrans**. If it does not appear, register the installed extension and restart Mail:
+```sh
+pluginkit -a '/Applications/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex'
+codesign --verify --deep --strict '/Applications/MailTrans.app'
+```
 
-   ```sh
-   pluginkit -a '/Applications/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex'
-   ```
+Restart Mail and confirm the extension checkbox afterward. Ad-hoc signature verification does not replace notarization or cross-machine testing.
 
-4. Open the included synthetic message:
-
-   ```sh
-   open -a Mail outputs/mail-translation-probe/layout-sample.eml
-   ```
-
-5. If the English → Chinese language model is missing, click **翻译为中文** (Translate to Chinese) and complete Apple's language preparation prompt. Automatic translation does not download models silently. Cancelling preparation keeps the original.
-6. After models are ready, reload the message. Check automatic translation, **显示原文** (Show original), and **翻译为中文**. Check the table, embedded image, and link in both views. Exact translated wording can vary with Apple's model.
-
-MailKit's permission dialog may mention reading all email and modifying outgoing messages. MailTrans implements reading-view translation; it does not send or forward messages, or rewrite mailbox originals. It does not require Accessibility, AppleScript automation, or Full Disk Access permissions.
-
-The app is not notarized. If macOS blocks launch or the extension cannot be enabled, report the exact error and OS version. Do not disable system-wide security controls. Installation on a different machine remains an area for compatibility testing.
+MailKit's permission dialog may mention reading all email and modifying outgoing messages. MailTrans implements reading-view translation; it does not send/forward messages or rewrite mailbox originals. It does not require Accessibility, AppleScript automation, or Full Disk Access.
 
 ## Everyday use
 
@@ -67,18 +58,20 @@ The app is not notarized. If macOS blocks launch or the extension cannot be enab
 - **Original view:** **翻译为中文** switches back. Choosing the original prevents a pending automatic result from replacing it during the cache's lifetime.
 - **Original Chinese message:** stays untouched, with no injected controls. Detection uses body text, including a conservative rule for Chinese-first replies.
 - **Other source languages:** click **翻译为中文** manually; support depends on Apple's available language pair.
-- **Menu bar:** **清空本地缓存** clears cache, **重新加载当前邮件** reloads the current email, and **退出 MailTrans** quits. Hover over the icon for status.
+- **Automatic translation:** toggle **自动翻译英文邮件** in the menu. This defaults to on, remembers your choice, and keeps manual translation and cached switching available while paused.
+- **Cancel/retry:** **取消当前翻译** cancels the running translation; **重试上次失败的邮件** retries that exact cached message. An expired cache asks you to reopen the message. Translation workers time out after 120 seconds and keep the original.
+- **Status:** an error icon and hover text report failures; pause uses a pause icon. Other menu actions clear cache, reload the visible Mail message, open **设置与帮助…**, or quit.
 
 ## Optional automatic launch
 
-From the repository root, after installing the app:
+Enable/disable the option in **设置与帮助…**. The existing CLI remains available for developers; from the repository root, after installing the app:
 
 ```sh
 python3 outputs/mail-translation-probe/source/manage_lifecycle.py enable
 python3 outputs/mail-translation-probe/source/manage_lifecycle.py status
 ```
 
-This installs a per-user LaunchAgent at `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist`. An invisible `MailTransLifecycle` process observes running applications and waits for Mail. The main menu bar app starts when Mail starts and exits when Mail quits; closing a Mail window does not count as quitting.
+This installs a per-user LaunchAgent at `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist`. An invisible `MailTransLifecycle` process observes running applications and waits for Mail. The main menu bar app starts when Mail starts and exits when Mail quits; closing a Mail window does not count as quitting. Manually opening MailTrans while Mail is closed keeps setup available.
 
 Manually quitting MailTrans keeps it stopped for the current Mail session, even if the watcher restarts. Reopening Mail in a new session resumes automatic launch. You can also open MailTrans manually to resume immediately.
 
@@ -92,9 +85,9 @@ Disabling removes the watcher service; disable the Mail extension separately if 
 
 ## Update
 
-1. Disable the lifecycle watcher using the command above, if enabled.
+1. In settings, uncheck automatic launch (or use the developer `disable` command above), if enabled.
 2. Uncheck MailTrans in Mail's extension settings, quit Mail, and quit MailTrans from its menu. Wait for its processes to exit.
-3. Keep a backup of the old app outside `/Applications` and update the source checkout. Rebuild using `build.py`.
+3. Keep a backup of the old app outside `/Applications`. Download/check/extract the new development ZIP, or update the checkout and rebuild using `build.py`.
 4. Unregister the old installed extension and the build copy before replacing the installed app:
 
    ```sh
@@ -124,8 +117,12 @@ Clear it using **清空本地缓存**. A Mail refresh can immediately cache the 
 
 ## Uninstall
 
+For the native flow, quit Mail, then reopen MailTrans if it followed Mail's quit. Open **设置与帮助… → 卸载 MailTrans…**, review the exact app path, and confirm. The app stops its watcher, unregisters its extension, trashes only that app, and clears its translation cache. Cancelling does nothing. If stopping the watcher or unregistering fails, the app is retained and an error is shown.
+
+For manual removal:
+
 1. Clear the local cache from MailTrans's menu.
-2. Disable the watcher with `manage_lifecycle.py disable` before deleting the app. Keep the checkout until this step is complete.
+2. Disable the watcher in settings or with `manage_lifecycle.py disable` before deleting the app. Keep the checkout until the CLI step is complete.
 3. Disable the MailTrans extension in Mail settings, quit Mail, and quit MailTrans.
 4. Unregister the installed extension with the `pluginkit -r` command above, then move `/Applications/MailTrans.app` to the Trash.
 5. If cache remains after a forced exit, remove only the `MailTranslation` cache directory shown above while Mail and MailTrans are stopped.
