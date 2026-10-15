@@ -61,6 +61,6 @@
 - [x] Integrate setup callbacks and first-launch behavior with runtime; run fresh complete build/tests and signature validation.
 - [x] Update English/Chinese docs/changelog and replace stale installation/menus/release claims.
 - [x] Independently review changes; fix material findings with reproductions.
-- [ ] Push feature branch, verify GitHub CI, integrate to main when checks pass.
-- [ ] Produce development ZIP/checksum and v0.10.0 pre-release with exact limitations; verify download/tag/source consistency.
+- [x] Push feature branch, verify GitHub CI, integrate to main when checks pass.
+- [x] Produce development ZIP/checksum and v0.10.0 pre-release with exact limitations; verify download/tag/source consistency.
 - [x] Report external needs: paid membership for notarization and independent Mac compatibility testing.

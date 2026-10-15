@@ -9,6 +9,7 @@
     <img src="https://img.shields.io/badge/architecture-Apple%20Silicon-111827" alt="Apple Silicon">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT 许可证"></a>
     <img src="https://img.shields.io/badge/status-experimental-f59e0b" alt="实验阶段">
+    <a href="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml"><img src="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml/badge.svg?branch=main" alt="构建与回归检查"></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
   <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
