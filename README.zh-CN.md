@@ -4,21 +4,21 @@
   <p><strong>英文邮件，中文阅读。继续使用 Apple Mail。</strong></p>
   <p>基于 MailKit 与苹果本地 Translation 框架的 macOS 邮件阅读扩展。</p>
   <p>
-    <img src="https://img.shields.io/badge/version-0.9-2563eb" alt="版本 0.9">
+    <img src="https://img.shields.io/badge/version-0.10-2563eb" alt="版本 0.10">
     <img src="https://img.shields.io/badge/macOS-26.4%2B-111827" alt="macOS 26.4 及以上">
     <img src="https://img.shields.io/badge/architecture-Apple%20Silicon-111827" alt="Apple Silicon">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT 许可证"></a>
     <img src="https://img.shields.io/badge/status-experimental-f59e0b" alt="实验阶段">
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.9.0">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
+  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
 </div>
 
 ![MailTrans 工作流程示意，使用人工邮件内容，并非应用截图](docs/assets/mailtrans-overview.svg)
 
 MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**。英文邮件自动翻译，点击即可查看原文。翻译由苹果本地模型完成，邮箱里的原始邮件保持不变。
 
-> **实验阶段，当前需从源码构建。** 0.9 已在 Apple Silicon、macOS 26.4、Mail 16.0 上验证。目前没有经过公证的安装包、Homebrew 包或已发布的二进制版本，其他机器及更高版本系统尚未验证。构建前请先阅读[环境要求与安装指南](docs/getting-started.zh-CN.md)。
+> **开发预发布版。** 可从 [v0.10.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0) 下载应用 ZIP 与 SHA-256 校验文件，或从源码构建。应用为临时签名，**未经公证**，macOS 可能阻止下载副本。已在 Apple Silicon / macOS 26.4 本地验证，其他独立 Mac 的安装尚未验证。详见[安装指南](docs/getting-started.zh-CN.md)及[兼容性清单](docs/compatibility.md)。
 
 ## 功能
 
@@ -29,13 +29,17 @@ MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**
 | 中文原文保持原样 | 简体、繁体中文正文不插入按钮、不替换内容、不写翻译缓存；中文开头的回复即使带英文签名或引用也保留原样。 |
 | 尽量保留排版 | 保留 HTML 结构、表格、链接、内嵌图片及附件字节；译文长度变化可能影响换行与列宽。 |
 | 本地翻译 | 使用苹果 Translation 与已下载的语言模型，没有云端翻译接口或自动云端回退。 |
-| 菜单栏运行 | 提供清空缓存、重新加载当前邮件、退出；可选后台监听器让程序随 Mail 启动与退出。 |
+| 菜单栏与设置 | 提供暂停自动翻译、取消任务、重试上次失败及设置帮助；可选监听器随 Mail 启动与退出。 |
+
+Mail 未打开时也可完成首次设置。翻译任务在 120 秒后超时，支持取消并防止迟到结果覆盖原文。暂停自动翻译会记住选择，手动翻译仍可使用。
 
 当前翻译目标和操作按钮为中文。其他源语言可在苹果语言模型支持时手动翻译。
 
 ## 快速开始
 
-需要 **Apple Silicon、macOS 26.4 或以上、安装在 `/Applications/Xcode.app` 的完整 Xcode，以及 Python 3**。已验证的构建环境为 Xcode 26.6 / macOS SDK 26.5，其他工具链尚未验证。
+使用开发版应用：下载并解压 ZIP，将 `MailTrans.app` 移入 `/Applications` 后打开。首次设置会引导打开 Mail、启用扩展、准备语言包，并提供可选自动联动。详见[安装与启用](docs/getting-started.zh-CN.md#安装与启用)。
+
+从源码构建需要 **Apple Silicon、macOS 26.4 或以上、安装在 `/Applications/Xcode.app` 的完整 Xcode，以及 Python 3**。已验证的构建环境为 Xcode 26.6 / macOS SDK 26.5，其他工具链尚未验证。
 
 ```sh
 git clone https://github.com/luoshuang148/MailTrans.git
