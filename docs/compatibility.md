@@ -8,8 +8,8 @@ Record one row per environment actually tested. Leave untested results explicit.
 
 | Environment | macOS / architecture | Xcode / SDK | App revision / checksum | Coverage / result |
 | --- | --- | --- | --- | --- |
-| Development Mac | macOS 26.4 / arm64 | Xcode 26.6 / SDK 26.5 | 0.10 / build 10 | Seven native suites, cross-process preferences, model-status protocol, full compilation/signatures, 15 portable tests and ZIP/extracted signature checks passed; Mail UI/model coverage recorded separately |
-| GitHub hosted runner | Record run output | Record run output | Link passing run and artifact | Automated regressions/build only |
+| Development Mac | macOS 26.4 / arm64 | Xcode 26.6 / SDK 26.5 | 0.10 / build 10 | Seven native suites, cross-process preferences, model-status protocol, full compilation/signatures, 15 portable tests and ZIP/extracted signature checks passed; native setup UI visually checked with isolated status fixtures; actual worker from build path returned model_missing (not passed); live Mail translation on this revision pending |
+| GitHub hosted runner | macOS 26.6.2 / arm64 | Xcode 26.6 / SDK 26.5 | [Passing run and artifact](https://github.com/luoshuang148/MailTrans/actions/runs/38695509237) | Portable tests, native suites, full build/signature and packaging passed; no live Mail/model acceptance |
 | Independent physical Mac | Not yet established | Build toolchain if built locally | Record downloaded ZIP checksum | Pending independent validation |
 
 Run the following checks with synthetic messages and note pass/fail, observed behavior and actionable errors:
