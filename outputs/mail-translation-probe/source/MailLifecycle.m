@@ -63,7 +63,7 @@ static BOOL Suppressed(NSUserDefaults *preferences,NSString *session) {
     self.attempted=YES;
     self.pending=YES;NSUInteger requestGeneration=self.generation;
     NSWorkspaceOpenConfiguration *configuration=NSWorkspaceOpenConfiguration.configuration;
-    configuration.activates=NO;
+    configuration.activates=NO;configuration.arguments=@[@"--mail-session"];
     [NSWorkspace.sharedWorkspace openApplicationAtURL:self.hostURL configuration:configuration completionHandler:^(NSRunningApplication *app,NSError *error){
         // AppKit invokes this completion on a concurrent queue. All lifecycle
         // state and decisions are serialized with workspace KVO on the main queue.
@@ -94,7 +94,12 @@ static BOOL Suppressed(NSUserDefaults *preferences,NSString *session) {
     BOOL sameSession=hadMail&&mails.count&&overlap.count;
     self.mails=mails;self.tokens=tokens;self.hosts=hosts;
     [self.retiringHosts intersectSet:hostPIDs];
-    if(!mails.count){if(hadMail){self.generation++;self.attempted=NO;}[self stopHost];}
+    if(!mails.count){
+        // A manually opened host may be displaying first-run setup while Mail is closed.
+        // Only retire a session we observed, or a watcher launch still in progress.
+        if(hadMail){self.generation++;self.attempted=NO;}
+        if(hadMail||self.pending||self.retiringHosts.count)[self stopHost];
+    }
     else if(!sameSession){self.generation++;self.attempted=NO;[self ensureHost];}
     else {[self rememberSuppression:suppressed];[self ensureHost];}
 }

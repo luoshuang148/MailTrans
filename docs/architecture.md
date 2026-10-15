@@ -22,6 +22,14 @@ Original Simplified and Traditional Chinese bodies bypass cache reads/writes and
 
 English bodies are queued automatically, one message at a time. Other supported languages use the manual body control. The worker exchanges ordered text arrays over JSON with the host; it does not receive a whole MIME package. `TranslationProvider` separates engine integration from MIME parsing, but only `apple-local` is implemented.
 
+## Setup, controls, and bounded work
+
+`MTSetupController` provides first-run and on-demand settings. `MTAppManagement` queries registration and model availability, manages the known per-user LaunchAgent without Python, and confirms the exact app path before uninstall. Mail's enabled checkbox still needs user confirmation. Lifecycle management refuses Downloads/translocated paths.
+
+The host persists `MTAutomaticTranslationEnabled` (default true). Pause cancels automatic work and keeps manual translation/cached switching available. The menu can cancel a running task or retry the exact last failed cached message. Error icons and tooltips expose failure; no mail content is logged.
+
+`MTProcessRunner` handles nonblocking stdin/stdout, a 120-second translation deadline, an 8 MiB output cap, cancellation, and TERM→KILL escalation. Normal app shutdown also synchronously stops owned runners. Native language preparation has a separate 15-minute download window. Automatic watcher launches pass `--mail-session`; manual launches can retain setup while Mail is closed.
+
 ## Original and translated views
 
 `MIMECore` handles MIME structure, transfer encoding, character sets, visible HTML text, and temporary message state. A SHA-256 content key isolates each message.
@@ -54,6 +62,10 @@ Sources currently live under [`outputs/mail-translation-probe/source/`](../outpu
 | `TranslationWorker.swift` | Apple on-device engine and provider registry |
 | `LanguageSetup.swift` | Native language-model preparation UI |
 | `MailLifecycle.h` / `MailLifecycle.m` / `LifecycleMain.m` | Process observation, shared preferences, session suppression, and launch/quit handling |
+| `MTProcessRunner.h` / `MTProcessRunner.m` | Bounded child-process I/O and cancellation |
+| `MTSetupController.h` / `MTSetupController.m` | Native first-run/settings/help UI |
+| `MTAppManagement.h` / `MTAppManagement.m` | Native lifecycle management and confirmed exact-app uninstall |
+| `package_release.py` | Validated development app ZIP and checksum |
 | `manage_lifecycle.py` | Enable, disable, and inspect the per-user watcher |
 | `build.py` | Native checks, compilation, icon packaging, fixture generation, ad-hoc signing, and signature verification |
 | `CoreTests.m` / `AppTests.m` / `ExtensionTests.m` | Synthetic MIME, host, and extension checks |

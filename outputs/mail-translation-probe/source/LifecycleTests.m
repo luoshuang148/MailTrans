@@ -117,7 +117,7 @@ int main(int argc,const char *argv[]) {@autoreleasepool {
     CHECK(Wait(^BOOL{return Apps(hostID).count==0;},8),"pending launch cannot leave host behind");
     Pump(0.8);
     Open(host,NO);
-    CHECK(Wait(^BOOL{return Apps(hostID).count==0;},5),"late host launch is stopped while Mail is closed");
+    Pump(1.4);CHECK(Apps(hostID).count==1,"manual host launch must keep setup available while Mail is closed");
     [observer stop];Open(mail,NO);
     observer=[[lifecycle alloc]initWithMailBundleIdentifier:mailID hostBundleIdentifier:hostID hostURL:host preferences:prefs];
     [observer start];

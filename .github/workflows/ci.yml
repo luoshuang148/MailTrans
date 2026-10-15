@@ -1,0 +1,61 @@
+name: Build and regressions
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portable:
+    name: Portable build and packaging tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Run real ZIP and build-planning regressions
+        run: python3 -m unittest discover -s outputs/mail-translation-probe/source -p 'test_*.py' -v
+
+  macos:
+    name: ARM native regressions and development app
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Report selected toolchain
+        run: |
+          uname -m
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-version
+      - name: Run native regressions and build the full app
+        # Default Xcode is selected by the image; build.py honors DEVELOPER_DIR.
+        # SDK <26.5 or a non-ARM runner is an explicit failure, never a skipped pass.
+        run: python3 outputs/mail-translation-probe/source/build.py
+      - name: Verify exact development archive and checksum
+        run: |
+          python3 outputs/mail-translation-probe/source/package_release.py --output-dir work/release
+          cd work/release
+          shasum -a 256 -c MailTrans-0.10.0-macos-arm64-development.zip.sha256
+      - name: Upload development archive and verification records
+        uses: actions/upload-artifact@v7
+        with:
+          name: MailTrans-0.10.0-macos-arm64-development
+          path: |
+            work/release/MailTrans-0.10.0-macos-arm64-development.zip
+            work/release/MailTrans-0.10.0-macos-arm64-development.zip.sha256
+            work/mail-real/build-verification.txt
+            work/mail-real/native-tests-verification.txt
+          if-no-files-found: error
+          retention-days: 14
