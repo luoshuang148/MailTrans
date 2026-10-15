@@ -20,7 +20,7 @@ From the repository root:
 python3 outputs/mail-translation-probe/source/build.py
 ```
 
-This compiles and runs four native test suites plus the bundled cross-process preferences check, packages the app, and verifies its ad-hoc signature. It does not replace the installed app or enable services. Use the [installation/update guide](docs/getting-started.md) when you need to test in Mail.
+This compiles and runs seven native test suites plus cross-process preferences and model-status checks, packages the app, and verifies its ad-hoc signature. It does not replace the installed app or enable services. Use the [installation/update guide](docs/getting-started.md) when you need to test in Mail.
 
 After installing and preparing language models, you can separately run:
 
