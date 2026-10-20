@@ -127,6 +127,11 @@ int main(void) {@autoreleasepool {
   [control translateKey:mail.key];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
   while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
   if(control.workerCalls!=1||![control.cache displayForKey:mail.key]){fputs("FAIL: manual translation must still work while paused\n",stderr);okay=NO;}
+  UIProbe *autoDefault=[UIProbe new];autoDefault.cache=[[MTCache alloc]initWithRoot:[root URLByAppendingPathComponent:@"auto-default"]];autoDefault.gate=[MTRequestGate new];autoDefault.automaticQueue=[MTTranslationQueue new];
+  [autoDefault.cache rememberMessage:mail];autoDefault.workerResult=@{@"translations":@[@"默认隐藏的自动译文。"]};
+  [autoDefault translateKey:mail.key automatic:YES];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
+  while(autoDefault.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+  if(![autoDefault.cache storedDisplayForKey:mail.key]||[autoDefault.cache displayForKey:mail.key]){fputs("FAIL: automatic translation must stay cached but show the original by default\n",stderr);okay=NO;}
   [control.cache clear];[control.cache rememberMessage:mail];control.workerResult=@{@"errorCode":@"timeout",@"message":@"Timed out"};
   [control translateKey:mail.key];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
   while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];

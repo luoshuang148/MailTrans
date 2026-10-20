@@ -17,6 +17,7 @@ int main(int argc,const char **argv){@autoreleasepool{
   if([mode isEqual:@"--echo"]){NSData *input=NSFileHandle.fileHandleWithStandardInput.readDataToEndOfFile;[NSFileHandle.fileHandleWithStandardOutput writeData:input];return 0;}
   if([mode isEqual:@"--nonzero"]){fputs("structured failure",stdout);return 2;}
   if([mode isEqual:@"--exit"]){return 0;}
+  if([mode isEqual:@"--exit-leak-stdout"]){if(fork()==0){sleep(2);_exit(0);}return 0;}
   if([mode isEqual:@"--ignore-term"])signal(SIGTERM,SIG_IGN);
   if([mode isEqual:@"--flood"]){char bytes[16384];memset(bytes,'x',sizeof(bytes));while(1)write(STDOUT_FILENO,bytes,sizeof(bytes));}
   while(1)usleep(10000);
@@ -40,6 +41,8 @@ int main(int argc,const char **argv){@autoreleasepool{
  check([result[@"errorCode"]isEqual:@"output_limit"]&&!flood.task.running&&[result[@"output"]length]<=flood.outputLimit,"unbounded stdout must stop at configured output cap");
  MTProcessRunner *early=runner(@"--exit",2);result=[early runWithInput:big];
  check(!result[@"errorCode"]&&!early.task.running,"early child exit while input remains must not SIGPIPE or hang parent");
+ MTProcessRunner *leak=runner(@"--exit-leak-stdout",5);start=NSProcessInfo.processInfo.systemUptime;result=[leak runWithInput:NSData.data];
+ check(!result[@"errorCode"]&&!leak.task.running&&result[@"output"]&&NSProcessInfo.processInfo.systemUptime-start<2,"stdout inherited by grandchild must not hang the runner");
  if(![echo respondsToSelector:NSSelectorFromString(@"cancelAndWait")]){check(NO,"normal app shutdown needs synchronous bounded child cleanup");}
  else{
   MTProcessRunner *shutdown=runner(@"--ignore-term",10);dispatch_semaphore_t finished=dispatch_semaphore_create(0);

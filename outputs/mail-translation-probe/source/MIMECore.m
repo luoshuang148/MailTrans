@@ -166,6 +166,7 @@ static void Controls(htmlDocPtr doc,NSString *key,BOOL translated){
 @property(readwrite,copy)NSString *key,*subject;
 @property(readwrite)BOOL eligible;
 @property(readwrite,copy)NSArray<NSString*>*texts;
+@property(nonatomic,strong)MTPart *root;
 @end
 static NSArray<MTPart*> *BodyParts(MTPart *part){
  if(part.text)return @[part];
@@ -190,7 +191,7 @@ static NSArray<MTPart*> *BodyParts(MTPart *part){
 static NSArray *Choose(MTPart *root){
  NSMutableArray *texts=[NSMutableArray new];
  for(MTPart *part in BodyParts(root)){
-  part.chosen=YES;
+  part.chosen=YES;[part.segments removeAllObjects];
   if([part.type isEqual:@"text/html"]){htmlDocPtr doc=HTML(part.text);if(doc){Collect(xmlDocGetRootElement(doc),[NSMutableArray new],part.segments,NO);xmlFreeDoc(doc);}}
   else if(CanTranslate(Trim(part.text)))[part.segments addObject:Trim(part.text)];
   [texts addObjectsFromArray:part.segments];
@@ -235,18 +236,18 @@ static NSData *OriginalWithControls(MTMessage *message){
 }
 @implementation MTMessage
 +(NSString*)keyForData:(NSData*)d{unsigned char digest[CC_SHA256_DIGEST_LENGTH];CC_SHA256(d.bytes,(CC_LONG)d.length,digest);NSMutableString *s=[NSMutableString new];for(int i=0;i<CC_SHA256_DIGEST_LENGTH;i++)[s appendFormat:@"%02x",digest[i]];return s;}
-+(instancetype)messageWithData:(NSData*)d{
- if(!d.length||d.length>10*1024*1024)return nil;MTMessage *m=[MTMessage new];m.original=d;m.key=[self keyForData:d];MTPart *root=[MTPart parse:d depth:0];
- m.subject=DecodeHeader(root.fields[@"subject"]?:@"（无主题）");m.texts=(!root.malformed&&!root.protectedContent)?Choose(root):@[];
- NSUInteger count=0;for(NSString *s in m.texts)count+=s.length;m.eligible=m.texts.count>0&&m.texts.count<=1024&&count<=200000;return m;
-}
--(NSData*)renderTranslations:(NSArray*)translations includeControls:(BOOL)controls{
- if(!self.eligible)return nil;if(translations&&(![translations isKindOfClass:NSArray.class]||translations.count!=self.texts.count))return nil;
- for(id v in translations)if(![v isKindOfClass:NSString.class]||[v length]>40000)return nil;
- if(!translations&&!controls)return self.original;if(!translations&&controls)return OriginalWithControls(self);MTPart *root=[MTPart parse:self.original depth:0];Choose(root);NSUInteger cursor=0;return [root render:translations cursor:&cursor key:self.key controls:controls];
-}
--(NSString*)bodyTextForLanguageRecognition{
- MTPart *root=[MTPart parse:self.original depth:0];if(root.malformed||root.protectedContent)return @"";
+ +(instancetype)messageWithData:(NSData*)d{
+  if(!d.length||d.length>10*1024*1024)return nil;MTMessage *m=[MTMessage new];m.original=d;m.key=[self keyForData:d];MTPart *root=[MTPart parse:d depth:0];m.root=root;
+  m.subject=DecodeHeader(root.fields[@"subject"]?:@"（无主题）");m.texts=(!root.malformed&&!root.protectedContent)?Choose(root):@[];
+  NSUInteger count=0;for(NSString *s in m.texts)count+=s.length;m.eligible=m.texts.count>0&&m.texts.count<=1024&&count<=200000;return m;
+ }
+ -(NSData*)renderTranslations:(NSArray*)translations includeControls:(BOOL)controls{
+  if(!self.eligible)return nil;if(translations&&(![translations isKindOfClass:NSArray.class]||translations.count!=self.texts.count))return nil;
+  for(id v in translations)if(![v isKindOfClass:NSString.class]||[v length]>40000)return nil;
+  if(!translations&&!controls)return self.original;if(!translations&&controls)return OriginalWithControls(self);MTPart *root=self.root?:[MTPart parse:self.original depth:0];Choose(root);NSUInteger cursor=0;return [root render:translations cursor:&cursor key:self.key controls:controls];
+ }
+ -(NSString*)bodyTextForLanguageRecognition{
+  MTPart *root=self.root?:[MTPart parse:self.original depth:0];if(root.malformed||root.protectedContent)return @"";
  NSMutableString *body=[NSMutableString new];
  for(MTPart *part in BodyParts(root)){
   NSString *text=part.text;
@@ -269,49 +270,111 @@ static NSData *OriginalWithControls(MTMessage *message){
 -(instancetype)initWithRoot:(NSURL*)root{if((self=[super init])){_root=root;[NSFileManager.defaultManager createDirectoryAtURL:root withIntermediateDirectories:YES attributes:@{NSFilePosixPermissions:@0700}error:nil];chmod(root.fileSystemRepresentation,0700);}return self;}
 +(BOOL)isValidKey:(NSString*)key{return [key isKindOfClass:NSString.class]&&key.length==64&&[key rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:@"0123456789abcdef"]invertedSet]].location==NSNotFound;}
 -(NSURL*)path:(NSString*)key suffix:(NSString*)suffix{return [MTCache isValidKey:key]?[self.root URLByAppendingPathComponent:[key stringByAppendingString:suffix]]:nil;}
--(NSData*)safeRead:(NSURL*)url{
- if(!url)return nil;NSNumber *link=nil;if(![url getResourceValue:&link forKey:NSURLIsSymbolicLinkKey error:nil]||link.boolValue)return nil;
- NSDictionary *attrs=[NSFileManager.defaultManager attributesOfItemAtPath:url.path error:nil];if([attrs[NSFileSize]unsignedLongLongValue]>16*1024*1024)return nil;return [NSData dataWithContentsOfURL:url];
+-(NSDictionary*)safeAttributes:(NSURL*)url maxSize:(unsigned long long)maxSize{
+ if(!url)return nil;NSNumber *link=nil;
+ if(![url getResourceValue:&link forKey:NSURLIsSymbolicLinkKey error:nil]||link.boolValue)return nil;
+ NSDictionary *attrs=[NSFileManager.defaultManager attributesOfItemAtPath:url.path error:nil];
+ if(![attrs[NSFileType]isEqual:NSFileTypeRegular])return nil;
+ unsigned long long size=[attrs[NSFileSize]unsignedLongLongValue];
+ if(!size||(maxSize&&size>maxSize))return nil;return attrs;
 }
+-(BOOL)hasFile:(NSURL*)url maxSize:(unsigned long long)maxSize{return [self safeAttributes:url maxSize:maxSize]!=nil;}
+-(NSData*)safeRead:(NSURL*)url maxSize:(unsigned long long)maxSize{
+ if(![self hasFile:url maxSize:maxSize])return nil;return [NSData dataWithContentsOfURL:url];
+}
+-(NSData*)safeRead:(NSURL*)url{return [self safeRead:url maxSize:16*1024*1024];}
 -(NSDictionary*)metadata:(NSString*)key{
- NSData *d=[self safeRead:[self path:key suffix:@".plist"]];if(!d)return nil;id p=[NSPropertyListSerialization propertyListWithData:d options:0 format:NULL error:nil];
+ NSData *d=[self safeRead:[self path:key suffix:@".plist"] maxSize:256*1024];if(!d)return nil;id p=[NSPropertyListSerialization propertyListWithData:d options:0 format:NULL error:nil];
  if(![p isKindOfClass:NSDictionary.class]||![p[@"timestamp"]isKindOfClass:NSNumber.class]||![p[@"subject"]isKindOfClass:NSString.class])return nil;
  NSTimeInterval age=NSDate.date.timeIntervalSince1970-[p[@"timestamp"]doubleValue];return age>=-60&&age<=1800?p:nil;
 }
 -(BOOL)write:(NSData*)d url:(NSURL*)url{if(!url||![d writeToURL:url options:NSDataWritingAtomic error:nil])return NO;chmod(url.fileSystemRepresentation,0600);return YES;}
--(void)removeKey:(NSString*)key{for(NSString *s in @[@".source.eml",@".display.eml",@".plist",@".original"]){NSURL *u=[self path:key suffix:s];if(u)[NSFileManager.defaultManager removeItemAtURL:u error:nil];}}
+-(void)removeKey:(NSString*)key{for(NSString *s in @[@".source.eml",@".display.eml",@".plist",@".original",@".translated",@".translatable"]){NSURL *u=[self path:key suffix:s];if(u)[NSFileManager.defaultManager removeItemAtURL:u error:nil];}}
 -(NSArray*)recentMessages{
- NSMutableArray *items=[NSMutableArray new];
- for(NSURL *u in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.root includingPropertiesForKeys:nil options:0 error:nil]){
-  if(![u.pathExtension isEqual:@"plist"])continue;NSString *key=u.lastPathComponent.stringByDeletingPathExtension;if(![MTCache isValidKey:key])continue;
-  NSDictionary *meta=[self metadata:key];if(!meta){[self removeKey:key];continue;}
-  [items addObject:@{@"key":key,@"subject":meta[@"subject"],@"timestamp":meta[@"timestamp"],@"translated":@([self displayForKey:key]!=nil),@"original":@([self prefersOriginalForKey:key])}];
+ @synchronized(MTCache.class){
+  NSMutableArray *items=[NSMutableArray new];
+  for(NSURL *u in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.root includingPropertiesForKeys:nil options:0 error:nil]){
+   if(![u.pathExtension isEqual:@"plist"])continue;NSString *key=u.lastPathComponent.stringByDeletingPathExtension;if(![MTCache isValidKey:key])continue;
+   NSDictionary *meta=[self metadata:key];if(!meta){[self removeKey:key];continue;}
+   BOOL source=[self hasFile:[self path:key suffix:@".source.eml"] maxSize:16*1024*1024];
+   BOOL original=source&&[self hasFile:[self path:key suffix:@".original"] maxSize:4096];
+   BOOL display=source&&[self hasFile:[self path:key suffix:@".display.eml"] maxSize:16*1024*1024];
+   [items addObject:@{@"key":key,@"subject":meta[@"subject"],@"timestamp":meta[@"timestamp"],@"translated":@(display),@"original":@(original)}];
+  }
+  [items sortUsingComparator:^NSComparisonResult(NSDictionary*a,NSDictionary*b){return [b[@"timestamp"]compare:a[@"timestamp"]];}];
+  while(items.count>20){[self removeKey:[items.lastObject objectForKey:@"key"]];[items removeLastObject];}return items;
  }
- [items sortUsingComparator:^NSComparisonResult(NSDictionary*a,NSDictionary*b){return [b[@"timestamp"]compare:a[@"timestamp"]];}];
- while(items.count>20){[self removeKey:[items.lastObject objectForKey:@"key"]];[items removeLastObject];}return items;
 }
--(BOOL)rememberMessage:(MTMessage*)m{
- if(!m.eligible||![MTCache isValidKey:m.key])return NO;
- (void)self.recentMessages; // Prune before a fresh touch can revive an expired display.
- if(![self safeRead:[self path:m.key suffix:@".source.eml"]]&&![self write:m.original url:[self path:m.key suffix:@".source.eml"]])return NO;
- NSString *subject=m.subject.length>300?[m.subject substringToIndex:300]:m.subject;
- NSData *meta=[NSPropertyListSerialization dataWithPropertyList:@{@"subject":subject,@"timestamp":@(NSDate.date.timeIntervalSince1970)}format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
- BOOL okay=[self write:meta url:[self path:m.key suffix:@".plist"]];(void)self.recentMessages;return okay;
+-(BOOL)rememberMessage:(MTMessage*)m changed:(BOOL*)changed{
+ if(changed)*changed=NO;if(!m.eligible||![MTCache isValidKey:m.key])return NO;
+ @synchronized(MTCache.class){
+  NSURL *source=[self path:m.key suffix:@".source.eml"];NSDictionary *meta=[self metadata:m.key];
+  if(![self hasFile:source maxSize:16*1024*1024]||!meta){
+   // Never let fresh metadata revive an expired or missing source/display.
+   [self removeKey:m.key];meta=nil;
+   if(![self write:m.original url:source])return NO;
+   if(changed)*changed=YES;
+  }
+  NSTimeInterval now=NSDate.date.timeIntervalSince1970;
+  if(!meta||now-[meta[@"timestamp"]doubleValue]>=60){
+   NSString *subject=m.subject.length>300?[m.subject substringToIndex:300]:m.subject;
+   NSData *data=[NSPropertyListSerialization dataWithPropertyList:@{@"subject":subject,@"timestamp":@(now)}format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
+   if(![self write:data url:[self path:m.key suffix:@".plist"]])return NO;
+   if(changed)*changed=YES;
+  }
+  (void)[self recentMessages];return YES;
+ }
 }
--(NSData*)sourceForKey:(NSString*)key{if(![self metadata:key])return nil;NSData *d=[self safeRead:[self path:key suffix:@".source.eml"]];return d&&[[MTMessage keyForData:d]isEqual:key]?d:nil;}
--(NSData*)storedDisplayForKey:(NSString*)key{return [self sourceForKey:key]?[self safeRead:[self path:key suffix:@".display.eml"]]:nil;}
--(NSData*)displayForKey:(NSString*)key{return ![self prefersOriginalForKey:key]?[self storedDisplayForKey:key]:nil;}
--(BOOL)setDisplay:(NSData*)d forKey:(NSString*)key{
- if(![self sourceForKey:key]||d.length>16*1024*1024||![self write:d url:[self path:key suffix:@".display.eml"]])return NO;
- NSURL *marker=[self path:key suffix:@".original"];
- return ![self safeRead:marker]||[NSFileManager.defaultManager removeItemAtURL:marker error:nil];
+-(BOOL)rememberMessage:(MTMessage*)m{return [self rememberMessage:m changed:NULL];}
+-(NSString*)subjectForKey:(NSString*)key{return [self metadata:key][@"subject"];}
+-(BOOL)hasSourceForKey:(NSString*)key{return [self metadata:key]!=nil&&[self hasFile:[self path:key suffix:@".source.eml"] maxSize:16*1024*1024];}
+-(BOOL)hasTranslatableSourceForKey:(NSString*)key{return [self hasSourceForKey:key]&&[self hasFile:[self path:key suffix:@".translatable"] maxSize:4096];}
+-(BOOL)markTranslatableSourceForKey:(NSString*)key{
+ @synchronized(MTCache.class){
+  if(![self hasSourceForKey:key])return NO;
+  return [self hasFile:[self path:key suffix:@".translatable"] maxSize:4096]||[self write:[@"translatable" dataUsingEncoding:NSUTF8StringEncoding] url:[self path:key suffix:@".translatable"]];
+ }
 }
--(BOOL)prefersOriginalForKey:(NSString*)key{return [self sourceForKey:key]&&[self safeRead:[self path:key suffix:@".original"]]!=nil;}
+-(BOOL)hasStoredDisplayForKey:(NSString*)key{return [self hasSourceForKey:key]&&[self hasFile:[self path:key suffix:@".display.eml"] maxSize:16*1024*1024];}
+-(BOOL)hasTranslatedDisplayForKey:(NSString*)key{
+ return [self hasStoredDisplayForKey:key]&&[self hasFile:[self path:key suffix:@".translated"] maxSize:4096]&&![self hasFile:[self path:key suffix:@".original"] maxSize:4096];
+}
+-(BOOL)activateStoredDisplayForKey:(NSString*)key{
+ @synchronized(MTCache.class){
+  if(![self hasStoredDisplayForKey:key])return NO;
+  if(![self write:[@"translated" dataUsingEncoding:NSUTF8StringEncoding] url:[self path:key suffix:@".translated"]])return NO;
+  NSURL *marker=[self path:key suffix:@".original"];
+  return ![self hasFile:marker maxSize:4096]||[NSFileManager.defaultManager removeItemAtURL:marker error:nil];
+ }
+}
+-(NSData*)sourceForKey:(NSString*)key{
+ if(![self metadata:key])return nil;NSData *d=[self safeRead:[self path:key suffix:@".source.eml"]];return d&&[[MTMessage keyForData:d]isEqual:key]?d:nil;
+}
+-(NSData*)storedDisplayForKey:(NSString*)key{return [self hasSourceForKey:key]?[self safeRead:[self path:key suffix:@".display.eml"]]:nil;}
+-(NSData*)displayForKey:(NSString*)key{return [self hasTranslatedDisplayForKey:key]?[self storedDisplayForKey:key]:nil;}
+-(BOOL)setDisplay:(NSData*)d forKey:(NSString*)key{return [self setDisplay:d forKey:key activate:YES];}
+-(BOOL)setDisplay:(NSData*)d forKey:(NSString*)key activate:(BOOL)activate{
+ @synchronized(MTCache.class){
+  if(![self hasSourceForKey:key]||d.length>16*1024*1024||![self write:d url:[self path:key suffix:@".display.eml"]])return NO;
+  if(!activate)return YES;
+  if(![self write:[@"translated" dataUsingEncoding:NSUTF8StringEncoding] url:[self path:key suffix:@".translated"]])return NO;
+  NSURL *marker=[self path:key suffix:@".original"];
+  return ![self hasFile:marker maxSize:4096]||[NSFileManager.defaultManager removeItemAtURL:marker error:nil];
+ }
+}
+-(BOOL)prefersOriginalForKey:(NSString*)key{return [self hasSourceForKey:key]&&[self hasFile:[self path:key suffix:@".original"] maxSize:4096];}
 -(void)restoreKey:(NSString*)key{
- if(![self sourceForKey:key])return;
- [self write:[@"original" dataUsingEncoding:NSUTF8StringEncoding] url:[self path:key suffix:@".original"]];
+ @synchronized(MTCache.class){
+  if(![self hasSourceForKey:key])return;
+  [self write:[@"original" dataUsingEncoding:NSUTF8StringEncoding] url:[self path:key suffix:@".original"]];
+  NSURL *translated=[self path:key suffix:@".translated"];if(translated)[NSFileManager.defaultManager removeItemAtURL:translated error:nil];
+ }
 }
--(void)clear{for(NSURL *u in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.root includingPropertiesForKeys:nil options:0 error:nil]){NSString *n=u.lastPathComponent;if(n.length>64&&[MTCache isValidKey:[n substringToIndex:64]])[NSFileManager.defaultManager removeItemAtURL:u error:nil];}}
+-(void)clear{
+ @synchronized(MTCache.class){
+  for(NSURL *u in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.root includingPropertiesForKeys:nil options:0 error:nil]){NSString *n=u.lastPathComponent;if(n.length>64&&[MTCache isValidKey:[n substringToIndex:64]])[NSFileManager.defaultManager removeItemAtURL:u error:nil];}
+ }
+}
 @end
 @implementation MTRequestGate{NSMutableDictionary<NSString*,NSUUID*>*_tokens;}
 -(instancetype)init{if((self=[super init]))_tokens=[NSMutableDictionary new];return self;}

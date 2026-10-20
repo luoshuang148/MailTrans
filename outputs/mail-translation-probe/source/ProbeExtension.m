@@ -9,7 +9,28 @@
 @implementation MailTranslationProbeExtension
 - (NSURL *)cacheRoot {return [NSURL fileURLWithPath:[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/MailTranslation"] isDirectory:YES];}
 - (id<MEMessageSecurityHandler>)handlerForMessageSecurity { return self; }
+- (NSData *)originalViewForMessage:(MTMessage *)message {
+    static NSCache<NSString *, NSData *> *views;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        views = [NSCache new];
+        views.countLimit = 4;
+        views.totalCostLimit = 32 * 1024 * 1024;
+    });
+    NSData *view = [views objectForKey:message.key];
+    if (view) return view;
+    view = [message renderTranslations:nil includeControls:YES];
+    if (view) [views setObject:view forKey:message.key cost:view.length];
+    return view;
+}
 - (MEDecodedMessage *)decodedMessageForMessageData:(NSData *)data {
+    // Switching to an already-active translation must not re-parse MIME or
+    // run language detection again; that work made Mail's reload flash.
+    NSURL *root = [self cacheRoot];
+    MTCache *cache = [[MTCache alloc] initWithRoot:root];
+    NSString *key = [MTMessage keyForData:data];
+    NSData *activeDisplay = [cache displayForKey:key];
+    if (activeDisplay && [cache hasTranslatableSourceForKey:key]) return [self decodedMessageWithDisplay:activeDisplay];
     MTMessage *message = [MTMessage messageWithData:data];
     if (!message.eligible) return nil;
     // Detect the original body, never the subject or a cached translated view.
@@ -26,22 +47,22 @@
         if ([language isEqual:NLLanguageSimplifiedChinese] || [language isEqual:NLLanguageTraditionalChinese]) return nil;
         break;
     }
-    NSData *display = nil;
-    @synchronized(MailTranslationProbeExtension.class) {
-        NSURL *root = [self cacheRoot];
-        MTCache *cache = [[MTCache alloc] initWithRoot:root];
-        if (![cache rememberMessage:message]) return nil;
-        display = [cache displayForKey:message.key];
-        if(!display)display=[message renderTranslations:nil includeControls:YES];
+    BOOL changed = NO;
+    if (![cache rememberMessage:message changed:&changed]) return nil;
+    if (![cache hasTranslatableSourceForKey:message.key]) [cache markTranslatableSourceForKey:message.key];
+    NSData *display = [cache displayForKey:message.key];
+    if (!display) display = [self originalViewForMessage:message];
+    if (changed) {
+        [NSDistributedNotificationCenter.defaultCenter postNotificationName:@"local.codex.mailtranslationprobe.cacheChanged" object:nil userInfo:nil deliverImmediately:YES];
     }
-    [NSDistributedNotificationCenter.defaultCenter postNotificationName:@"local.codex.mailtranslationprobe.cacheChanged" object:nil userInfo:nil deliverImmediately:YES];
     // Original mode adds an independent inline control part around unchanged source MIME.
     if (!display) return nil;
-    // Leave remote-content decisions to Mail and its existing privacy settings in both views.
+    return [self decodedMessageWithDisplay:display];
+}
+- (MEDecodedMessage *)decodedMessageWithDisplay:(NSData *)display {
     MEMessageSecurityInformation *security = [[MEMessageSecurityInformation alloc]
         initWithSigners:@[] isEncrypted:NO signingError:nil encryptionError:nil
         shouldBlockRemoteContent:NO localizedRemoteContentBlockingReason:nil];
-    // The custom reading links use the containing app; no unstable MailKit banner UI.
     return [[MEDecodedMessage alloc] initWithData:display securityInformation:security context:nil banner:nil];
 }
 - (void)primaryActionClickedForMessageContext:(NSData *)context completionHandler:(void (^)(MEExtensionViewController *))completionHandler { completionHandler(nil); }

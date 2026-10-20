@@ -21,7 +21,9 @@
     if(self.task.running)[self.task terminate];
     while(self.task.running&&NSProcessInfo.processInfo.systemUptime<deadline)usleep(5000);
     if(self.task.running){pid_t pid=self.task.processIdentifier;if(pid>0)kill(pid,SIGKILL);}
-    if(self.task.running)[self.task waitUntilExit];
+    deadline=NSProcessInfo.processInfo.systemUptime+0.5;
+    while(self.task.running&&NSProcessInfo.processInfo.systemUptime<deadline)usleep(5000);
+    if(!self.task.running)[self.task waitUntilExit];
 }
 - (NSDictionary *)runWithInput:(NSData *)input {
     if(!isfinite(self.timeout)||self.timeout<=0||!self.outputLimit)return @{@"errorCode":@"invalid_configuration"};
@@ -42,11 +44,15 @@
     fcntl(outputFD,F_SETFL,fcntl(outputFD,F_GETFL)|O_NONBLOCK);
     NSUInteger offset=0;BOOL inputClosed=NO,outputClosed=NO,killed=NO;
     NSString *failure=nil;NSMutableData *output=[NSMutableData new];
-    NSTimeInterval deadline=NSProcessInfo.processInfo.systemUptime+self.timeout,killDeadline=0;
+    NSTimeInterval deadline=NSProcessInfo.processInfo.systemUptime+self.timeout,killDeadline=0,exitDrainDeadline=0,hardDeadline=0;
     while(YES){
         NSTimeInterval now=NSProcessInfo.processInfo.systemUptime;
         if(!failure&&self.cancellationRequested)failure=@"cancelled";
         if(!failure&&now>=deadline)failure=@"timeout";
+        // A grandchild can inherit stdout and keep the pipe open after the
+        // worker exits. Never wait for EOF forever in that case.
+        if(!failure&&!self.task.running&&!outputClosed&&exitDrainDeadline==0)exitDrainDeadline=now+0.5;
+        if(!failure&&exitDrainDeadline>0&&now>=exitDrainDeadline){outputClosed=YES;exitDrainDeadline=0;}
         if(!failure&&!inputClosed){
             if(offset>=input.length){[writer closeFile];inputClosed=YES;}
             else{
@@ -68,14 +74,15 @@
             if(!inputClosed){[writer closeFile];inputClosed=YES;}
             if(killDeadline==0){if(self.task.running)[self.task terminate];killDeadline=now+0.5;}
             if(self.task.running&&!killed&&now>=killDeadline){
-                pid_t pid=self.task.processIdentifier;if(pid>0)kill(pid,SIGKILL);killed=YES;
+                pid_t pid=self.task.processIdentifier;if(pid>0)kill(pid,SIGKILL);killed=YES;hardDeadline=now+0.5;
             }
             if(!self.task.running)break;
+            if(hardDeadline>0&&now>=hardDeadline)break;
         }else if(!self.task.running&&outputClosed)break;
         usleep(5000);
     }
     if(!inputClosed)[writer closeFile];[reader closeFile];
-    [self.task waitUntilExit];
+    if(!self.task.running)[self.task waitUntilExit];
     if(failure)return @{@"errorCode":failure,@"output":output};
     return @{@"output":output,@"exitStatus":@(self.task.terminationStatus)};
 }

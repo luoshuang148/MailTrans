@@ -15,7 +15,11 @@ int main(void){@autoreleasepool {
  MEDecodedMessage *original=[extension decodedMessageForMessageData:source];
  if(original==nil){fputs("FAIL: original view must keep translation controls available\n",stderr);failures++;}
  if(original.securityInformation.shouldBlockRemoteContent){fputs("FAIL: original view must defer remote images to Mail privacy settings\n",stderr);failures++;}
- NSData *display=[message renderTranslations:@[@"研讨会明天上午开始。"] includeControls:YES];[cache setDisplay:display forKey:message.key];
+ NSData *display=[message renderTranslations:@[@"研讨会明天上午开始。"] includeControls:YES];[cache setDisplay:display forKey:message.key activate:NO];
+ MEDecodedMessage *defaultView=[extension decodedMessageForMessageData:source];
+ NSRange english=[defaultView.rawData rangeOfData:[@"The workshop begins" dataUsingEncoding:NSUTF8StringEncoding] options:0 range:NSMakeRange(0,defaultView.rawData.length)];
+ if(defaultView==nil||[defaultView.rawData isEqual:display]||english.location==NSNotFound){fputs("FAIL: automatic translation must stay hidden until the user asks for Chinese\n",stderr);failures++;}
+ [cache activateStoredDisplayForKey:message.key];
  MEDecodedMessage *chinese=[extension decodedMessageForMessageData:source];
  if(chinese==nil){fputs("FAIL: ready Chinese must use cached translated display\n",stderr);failures++;}
  if(chinese.securityInformation.shouldBlockRemoteContent){fputs("FAIL: Chinese view must defer remote images to Mail privacy settings\n",stderr);failures++;}
