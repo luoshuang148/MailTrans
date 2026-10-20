@@ -37,7 +37,8 @@ The 0.11 menu bar could keep a warning icon after a translation failure while th
 
 ## Hosted CI
 
-Pending: to be updated after the `v0.11.1` commit is pushed and the hosted workflow completes.
+- [GitHub Actions run 39476721720](https://github.com/luoshuang148/MailTrans/actions/runs/39476721720) passed both portable and ARM native jobs, including full build, signature verification, failure-diagnostics regressions and development packaging.
+- Its `MailTrans-0.11.1-macos-arm64-development.zip` is byte-for-byte identical to the locally packaged ZIP and has the same SHA-256: `77010bd9646a7803bb2a09a09caa6bd6597bdd5741e82f55ede06972494dd94b`.
 
 ## Limits
 
