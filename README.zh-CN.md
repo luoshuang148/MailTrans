@@ -4,7 +4,7 @@
   <p><strong>英文邮件，中文阅读。继续使用 Apple Mail。</strong></p>
   <p>基于 MailKit 与苹果本地 Translation 框架的 macOS 邮件阅读扩展。</p>
   <p>
-    <img src="https://img.shields.io/badge/version-0.10-2563eb" alt="版本 0.10">
+    <img src="https://img.shields.io/badge/version-0.11-2563eb" alt="版本 0.11">
     <img src="https://img.shields.io/badge/macOS-26.4%2B-111827" alt="macOS 26.4 及以上">
     <img src="https://img.shields.io/badge/architecture-Apple%20Silicon-111827" alt="Apple Silicon">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT 许可证"></a>
@@ -12,20 +12,20 @@
     <a href="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml"><img src="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml/badge.svg?branch=main" alt="构建与回归检查"></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
+  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
 </div>
 
 ![MailTrans 工作流程示意，使用人工邮件内容，并非应用截图](docs/assets/mailtrans-overview.svg)
 
-MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**。英文邮件自动翻译，点击即可查看原文。翻译由苹果本地模型完成，邮箱里的原始邮件保持不变。
+MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**。英文邮件默认显示原文，后台准备译文，点击即可查看中文。翻译由苹果本地模型完成，邮箱里的原始邮件保持不变。
 
-> **开发预发布版。** 可从 [v0.10.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0) 下载应用 ZIP 与 SHA-256 校验文件，或从源码构建。应用为临时签名，**未经公证**，macOS 可能阻止下载副本。已在 Apple Silicon / macOS 26.4 本地验证，其他独立 Mac 的安装尚未验证。详见[安装指南](docs/getting-started.zh-CN.md)及[兼容性清单](docs/compatibility.md)。
+> **开发预发布版。** 可从 [v0.11.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0) 下载应用 ZIP 与 SHA-256 校验文件，或从源码构建。应用为临时签名，**未经公证**，macOS 可能阻止下载副本。已在 Apple Silicon / macOS 26.4 本地验证，其他独立 Mac 的安装尚未验证。详见[安装指南](docs/getting-started.zh-CN.md)及[兼容性清单](docs/compatibility.md)。
 
 ## 功能
 
 | 功能 | 实际体验 |
 | --- | --- |
-| 英文自动译为中文 | 打开英文邮件后后台翻译，不弹出独立阅读窗口。 |
+| 英文自动译为中文 | 打开英文邮件后后台翻译，仍默认显示原文；点击**翻译为中文**立即切换到已准备的译文。 |
 | 一键对照原文 | 中文视图点击**显示原文**，原文视图点击**翻译为中文**。已有译文直接使用缓存。 |
 | 中文原文保持原样 | 简体、繁体中文正文不插入按钮、不替换内容、不写翻译缓存；中文开头的回复即使带英文签名或引用也保留原样。 |
 | 尽量保留排版 | 保留 HTML 结构、表格、链接、内嵌图片及附件字节；译文长度变化可能影响换行与列宽。 |
@@ -56,7 +56,7 @@ python3 outputs/mail-translation-probe/source/build.py
 
 1. **MailKit 阅读扩展**接收邮件，保留原始 MIME 到临时本地缓存；中文原文直接交由 Mail 展示。
 2. **菜单栏宿主**选取可翻译正文，通过 **Swift worker** 调用苹果本地 Translation 框架。
-3. 扩展在 Mail 中显示译文。点击**显示原文**时恢复原始内容，并附加独立控制条；不向邮箱写回修改。
+3. 扩展在 Mail 中按需显示译文。点击**显示原文**时恢复原始内容，并附加独立控制条；不向邮箱写回修改。
 
 实现细节见[架构与源码地图](docs/architecture.md)，包括 MIME 处理、任务失效控制及可选生命周期监听器。
 

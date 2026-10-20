@@ -4,7 +4,7 @@
   <p><strong>Read English emails in Chinese. Stay in Apple Mail.</strong></p>
   <p>A macOS MailKit extension powered by Apple's on-device Translation framework.</p>
   <p>
-    <img src="https://img.shields.io/badge/version-0.10-2563eb" alt="Version 0.10">
+    <img src="https://img.shields.io/badge/version-0.11-2563eb" alt="Version 0.11">
     <img src="https://img.shields.io/badge/macOS-26.4%2B-111827" alt="macOS 26.4 or later">
     <img src="https://img.shields.io/badge/architecture-Apple%20Silicon-111827" alt="Apple Silicon">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license"></a>
@@ -12,20 +12,20 @@
     <a href="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml"><img src="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and regressions"></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0">Pre-release</a> · <a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0">Pre-release</a> · <a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 </div>
 
 ![Illustrated MailTrans workflow using synthetic email content; not an application screenshot](docs/assets/mailtrans-overview.svg)
 
-MailTrans translates email body text into **Simplified Chinese** inside Apple Mail's reading view. English emails translate automatically, and you can switch back to the original with one click. MailTrans uses Apple's local translation models and keeps the original mailbox message intact.
+MailTrans translates email body text into **Simplified Chinese** inside Apple Mail's reading view. English emails show the original by default while a Chinese translation is prepared in the background; click to view the Chinese version. MailTrans uses Apple's local translation models and keeps the original mailbox message intact.
 
-> **Development pre-release.** Download the app ZIP and SHA-256 checksum from [v0.10.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0), or build from source. The app is ad-hoc signed and **not notarized**; macOS may block downloaded copies. Tested locally on Apple Silicon / macOS 26.4. Independent Mac installation remains unverified. See the [setup guide](docs/getting-started.md) and [compatibility checklist](docs/compatibility.md).
+> **Development pre-release.** Download the app ZIP and SHA-256 checksum from [v0.11.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0), or build from source. The app is ad-hoc signed and **not notarized**; macOS may block downloaded copies. Tested locally on Apple Silicon / macOS 26.4. Independent Mac installation remains unverified. See the [setup guide](docs/getting-started.md) and [compatibility checklist](docs/compatibility.md).
 
 ## Features
 
 | Feature | What to expect |
 | --- | --- |
-| Automatic English → Chinese | Open an English email; translation runs in the background without a separate reading window. |
+| Automatic English → Chinese | Open an English email; translation runs in the background and the original stays visible until you click **翻译为中文**. |
 | One-click original | **显示原文** shows the original; **翻译为中文** returns to the translation. Cached translations switch without running the model again. |
 | Chinese stays untouched | Original Simplified and Traditional Chinese emails receive no translation controls or replacement content. Chinese-first replies are preserved even with English signatures or quotes. |
 | Layout preservation | Keeps HTML structure, tables, links, inline images, and attachment bytes where supported. Translated text can naturally change wrapping and column widths. |
@@ -56,7 +56,7 @@ Follow the [installation guide](docs/getting-started.md#install-and-enable) to p
 
 1. A **MailKit reading extension** receives a message and preserves its original MIME content in a temporary local cache. Original Chinese messages bypass this path.
 2. The **menu bar app** selects translatable body text and sends it to a **Swift translation worker** using Apple's on-device Translation framework.
-3. The extension displays the translated reading content in Mail. **显示原文** restores the original content with a separate control strip; MailTrans does not write changes back to the mailbox.
+3. The extension shows the translated reading content on demand. **显示原文** restores the original content with a separate control strip; MailTrans does not write changes back to the mailbox.
 
 See [architecture and source map](docs/architecture.md) for MIME handling, request cancellation, and the optional Mail lifecycle watcher.
 

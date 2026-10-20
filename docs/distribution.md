@@ -1,6 +1,6 @@
 # Development distribution
 
-MailTrans 0.10 (build 10) is an Apple Silicon development preview for macOS 26.4 or newer. The downloadable `MailTrans-0.10.0-macos-arm64-development.zip` contains an **ad-hoc signed, unnotarized** app. Ad-hoc verification checks integrity; it does not establish an Apple Developer identity or promise that Gatekeeper will accept a downloaded copy. No paid Apple Developer membership is needed to build this preview locally. Cross-Mac installation and Mail extension acceptance require separate testing.
+MailTrans 0.11 (build 11) is an Apple Silicon development preview for macOS 26.4 or newer. The downloadable `MailTrans-0.11.0-macos-arm64-development.zip` contains an **ad-hoc signed, unnotarized** app. Ad-hoc verification checks integrity; it does not establish an Apple Developer identity or promise that Gatekeeper will accept a downloaded copy. No paid Apple Developer membership is needed to build this preview locally. Cross-Mac installation and Mail extension acceptance require separate testing.
 
 ## Build and verify
 
@@ -11,7 +11,7 @@ python3 -m unittest discover -s outputs/mail-translation-probe/source -p 'test_*
 python3 outputs/mail-translation-probe/source/build.py
 python3 outputs/mail-translation-probe/source/package_release.py --output-dir work/release
 cd work/release
-shasum -a 256 -c MailTrans-0.10.0-macos-arm64-development.zip.sha256
+shasum -a 256 -c MailTrans-0.11.0-macos-arm64-development.zip.sha256
 ```
 
 The build uses `DEVELOPER_DIR` when set, otherwise the `xcode-select` selection. An explicit override is also supported:

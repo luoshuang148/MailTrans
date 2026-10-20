@@ -145,7 +145,7 @@ def write_bundle_plists(app, ext, helper):
     for directory in [app / 'Contents/MacOS', app / 'Contents/Resources',
                       ext / 'Contents/MacOS', helper / 'Contents/MacOS']:
         directory.mkdir(parents=True, exist_ok=True)
-    common = {'CFBundleVersion': '10', 'CFBundleShortVersionString': '0.10',
+    common = {'CFBundleVersion': '11', 'CFBundleShortVersionString': '0.11',
               'LSMinimumSystemVersion': '26.4'}
     plist(app / 'Contents/Info.plist', dict(common, **{
         'CFBundleIdentifier': 'local.codex.mailtranslationprobe', 'CFBundleName': 'MailTrans',

@@ -36,7 +36,9 @@ The host persists `MTAutomaticTranslationEnabled` (default true). Pause cancels 
 
 - Translated content replaces selected visible text while retaining supported structure, links, image data, and attachments.
 - Original display wraps the intact original MIME package with a separate HTML control part. It does not rebuild original body or attachment bytes, or write back to the mailbox.
-- **显示原文** cancels queued work or invalidates active results for that message. Clear-cache and app-exit paths also invalidate requests, preventing late results from restoring discarded translations.
+- Automatic translation caches the translated reading view without activating it. The original remains visible until an explicit **翻译为中文** click; separate cache markers record an original choice, a translatable source, and an activated translation.
+- **显示原文** activates the original view and invalidates queued or active results for that message, while retaining any completed translation for a later cached switch. Clear-cache and app-exit paths invalidate requests, preventing late results from restoring discarded translations.
+- An already-active cached translation bypasses MIME parsing and language detection when Mail requests the reading view again. Mail still controls the reading-view reload itself, which can cause a brief redraw.
 - Both views defer remote-content handling to Mail. No plugin-specific extra remote-image block is applied.
 
 Signed/encrypted messages, unsafe parse results, and content above the documented limits are skipped.

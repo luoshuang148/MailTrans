@@ -12,7 +12,7 @@ import sys
 import tempfile
 import zipfile
 
-ARCHIVE_NAME = 'MailTrans-0.10.0-macos-arm64-development.zip'
+ARCHIVE_NAME = 'MailTrans-0.11.0-macos-arm64-development.zip'
 BUNDLES = {
     '': ('local.codex.mailtranslationprobe', 'MailTrans', 'APPL'),
     'Contents/PlugIns/MailTranslationProbe.appex': (
@@ -77,8 +77,8 @@ def validate_app(app):
         except (OSError, plistlib.InvalidFileException) as error:
             raise ValueError(f'Missing or invalid Info.plist: {info_path}') from error
         for key, value in {'CFBundleIdentifier': identifier, 'CFBundleExecutable': executable,
-                           'CFBundlePackageType': kind, 'CFBundleShortVersionString': '0.10',
-                           'CFBundleVersion': '10', 'LSMinimumSystemVersion': '26.4'}.items():
+                           'CFBundlePackageType': kind, 'CFBundleShortVersionString': '0.11',
+                           'CFBundleVersion': '11', 'LSMinimumSystemVersion': '26.4'}.items():
             if info.get(key) != value:
                 raise ValueError(f'{info_path}: {key} must be {value!r}')
         expected.update({prefix + 'Contents/Info.plist', prefix + 'Contents/MacOS/' + executable,

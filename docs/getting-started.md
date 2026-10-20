@@ -2,7 +2,7 @@
 
 [Home](../README.md) · [简体中文](getting-started.zh-CN.md)
 
-MailTrans 0.10 is an experimental development preview. The [release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0) provides an ad-hoc signed app ZIP and SHA-256 file. It is **not Developer ID signed or notarized**; downloaded-app acceptance and independent Mac installation remain unverified. If macOS blocks the preview, build from source rather than disabling security controls.
+MailTrans 0.11 is an experimental development preview. The [release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0) provides an ad-hoc signed app ZIP and SHA-256 file. It is **not Developer ID signed or notarized**; downloaded-app acceptance and independent Mac installation remain unverified. If macOS blocks the preview, build from source rather than disabling security controls.
 
 ## Requirements
 
@@ -33,12 +33,12 @@ Output: `outputs/mail-translation-probe/MailTrans.app`. Intermediate files are k
 
 For an existing installation, follow [Update](#update) first.
 
-1. Download the app ZIP and its matching `.sha256` file from the [development release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.10.0). In the download folder, check `shasum -a 256 -c MailTrans-0.10.0-macos-arm64-development.zip.sha256`, then extract the ZIP with Archive Utility. Source builders can use their generated app instead.
+1. Download the app ZIP and its matching `.sha256` file from the [development release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0). In the download folder, check `shasum -a 256 -c MailTrans-0.11.0-macos-arm64-development.zip.sha256`, then extract the ZIP with Archive Utility. Source builders can use their generated app instead.
 2. Move `MailTrans.app` to `/Applications` and open that copy. Do not enable automatic launch from Downloads or a temporary/translocated path. The development signature checks integrity, not publisher identity. If macOS blocks launch, report the exact message or build from source; do not disable system-wide protections.
 3. First-run **MailTrans 设置** (Setup) works even with Mail closed. Use **打开“邮件”** to open Mail, then go to **Mail → Settings → Extensions** and enable **MailTrans**. The setup registration check cannot prove that Mail's enable checkbox is on; confirm it there.
 4. Check the English→Chinese model status. **准备英中语言包** opens Apple's native model preparation; initial preparation may require a download. Cancelling preserves the original message.
 5. Optionally enable **随“邮件”自动启动和退出**. This installs only MailTrans's per-user watcher; it does not need Python. Click **完成设置** to finish. Reopen this window anytime through **设置与帮助…** in the menu bar.
-6. Use **打开示例邮件** to check the synthetic sample. Compare automatic translation, **显示原文** and **翻译为中文**, as well as the table, embedded image, and link. Exact wording can vary with Apple's model.
+6. Use **打开示例邮件** to confirm the original is shown first, then click **翻译为中文** to check the translation, **显示原文**, and the table, embedded image, and link in both views. Exact wording can vary with Apple's model.
 
 If the installed extension is missing, an advanced registration check is:
 
@@ -53,9 +53,10 @@ MailKit's permission dialog may mention reading all email and modifying outgoing
 
 ## Everyday use
 
-- **English message:** opens into an automatic translation after a short wait. Cached translations display faster.
+- **English message:** opens in the original view while a Chinese translation is prepared in the background. Click **翻译为中文** to view it; a prepared translation switches immediately from cache.
 - **Chinese translation:** **显示原文** switches to the original, retaining its content and a separate control strip.
 - **Original view:** **翻译为中文** switches back. Choosing the original prevents a pending automatic result from replacing it during the cache's lifetime.
+- **Switching refresh:** Mail may briefly redraw the reading view on refresh. A prepared translation does not rerun the model.
 - **Original Chinese message:** stays untouched, with no injected controls. Detection uses body text, including a conservative rule for Chinese-first replies.
 - **Other source languages:** click **翻译为中文** manually; support depends on Apple's available language pair.
 - **Automatic translation:** toggle **自动翻译英文邮件** in the menu. This defaults to on, remembers your choice, and keeps manual translation and cached switching available while paused.
