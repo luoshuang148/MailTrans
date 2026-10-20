@@ -2,7 +2,7 @@
 
 [首页](../README.zh-CN.md) · [English](getting-started.md)
 
-0.11 为开发预发布版。[Release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0) 提供应用 ZIP 与 SHA-256 文件，应用为临时签名，**没有 Developer ID 分发签名或公证**，下载后的系统接受情况及独立 Mac 安装尚待验证。系统阻止时可从源码构建，不关闭系统级安全保护。
+0.11.1 为开发预发布版。[Release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1) 提供应用 ZIP 与 SHA-256 文件，应用为临时签名，**没有 Developer ID 分发签名或公证**，下载后的系统接受情况及独立 Mac 安装尚待验证。系统阻止时可从源码构建，不关闭系统级安全保护。
 
 ## 环境要求
 
@@ -33,7 +33,7 @@ python3 outputs/mail-translation-probe/source/build.py
 
 已有安装时，请先阅读[更新](#更新)。
 
-1. 从[开发版 Release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0) 下载应用 ZIP 与配套 `.sha256` 文件。在下载目录执行 `shasum -a 256 -c MailTrans-0.11.0-macos-arm64-development.zip.sha256` 核对完整性，再用 macOS 归档实用工具解压。源码用户可使用自己的构建产物。
+1. 从[开发版 Release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1) 下载应用 ZIP 与配套 `.sha256` 文件。在下载目录执行 `shasum -a 256 -c MailTrans-0.11.1-macos-arm64-development.zip.sha256` 核对完整性，再用 macOS 归档实用工具解压。源码用户可使用自己的构建产物。
 2. 将 `MailTrans.app` 移入 `/Applications`，打开该副本。不要从下载目录或临时转移路径启用自动联动。临时签名只验证包完整性，不提供开发者身份；macOS 阻止时，请反馈准确提示或从源码构建，不关闭系统级保护。
 3. 首次显示 **MailTrans 设置**，Mail 尚未运行也可使用。点击**打开“邮件”**，在**邮件 → 设置 → 扩展**中勾选 **MailTrans**。设置页的注册检查不能证明已勾选，仍需在 Mail 中确认。
 4. 查看英中语言包状态，点击**准备英中语言包**打开苹果原生准备窗口。首次可能需要下载；取消则保留原文。
@@ -59,7 +59,7 @@ codesign --verify --deep --strict '/Applications/MailTrans.app'
 - **其他源语言**：手动点击**翻译为中文**，能否翻译取决于苹果支持的语言组合。
 - **自动翻译**：菜单中的**自动翻译英文邮件**默认开启，关闭后记住选择；暂停期间仍可手动翻译及切换缓存译文。
 - **取消与重试**：**取消当前翻译**停止当前任务；**重试上次失败的邮件**只重试对应的缓存邮件，缓存过期会提示重新打开。翻译 worker 在 120 秒后超时，保留原文。
-- **状态与菜单**：错误会显示提醒图标与悬停说明，暂停会显示暂停图标。还可清空缓存、重新加载当前邮件、打开**设置与帮助…**或退出。
+- **状态与菜单**：菜单与悬停说明会显示上次失败原因、错误代码和时间；**忽略上次失败提示**只清除提示，不删除缓存。成功重试或清空缓存同样清除记录。需要日志时在终端执行 `log show --last 1h --predicate 'subsystem == "local.codex.mailtranslationprobe" AND category == "translation"'`。暂停会显示暂停图标；还可清空缓存、重新加载当前邮件、打开**设置与帮助…**或退出。
 
 ## 可选自动联动
 
@@ -135,6 +135,7 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
 | 扩展列表找不到 MailTrans | 安装 `/Applications` 副本并注册其 `.appex`，重启 Mail 后再打开 MailTrans，检查最低系统版本。 |
 | 英文仍未翻译 | 启用扩展并运行宿主，手动准备语言模型后重新加载邮件；检查是否签名、加密或超过首页限制。 |
 | `model_missing` | 按原生提示准备对应语言组合后重试。相同 worker 曾在同步 Documents 构建路径与 `/Applications` 安装路径得到不同结果，原因尚未确认。 |
+| 有提醒图标但看不到原因 | 打开菜单查看“上次失败：…”及错误代码和时间，重试对应邮件或忽略提示。相同信息会写入 `translation` 分类的 `os_log`，不包含邮件正文。 |
 | 签名报错提及 FinderInfo / resource fork | 在 iCloud 等同步目录外重新构建、复制新副本并检查签名。构建仅清理生成包中不兼容的元数据，同步目录可能重新附加这些属性。 |
 | macOS 阻止启动 | 当前是临时签名开发版，未经过分发公证；反馈准确警告与环境，供兼容性验证。 |
 | 中文原文没有按钮 | 正常行为，中文正文直接交给 Mail，中文开头且带英文引用或签名的回复也保留原样。 |

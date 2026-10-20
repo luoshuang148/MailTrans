@@ -47,14 +47,14 @@ jobs:
         run: |
           python3 outputs/mail-translation-probe/source/package_release.py --output-dir work/release
           cd work/release
-          shasum -a 256 -c MailTrans-0.11.0-macos-arm64-development.zip.sha256
+          shasum -a 256 -c MailTrans-0.11.1-macos-arm64-development.zip.sha256
       - name: Upload development archive and verification records
         uses: actions/upload-artifact@v7
         with:
-          name: MailTrans-0.11.0-macos-arm64-development
+          name: MailTrans-0.11.1-macos-arm64-development
           path: |
-            work/release/MailTrans-0.11.0-macos-arm64-development.zip
-            work/release/MailTrans-0.11.0-macos-arm64-development.zip.sha256
+            work/release/MailTrans-0.11.1-macos-arm64-development.zip
+            work/release/MailTrans-0.11.1-macos-arm64-development.zip.sha256
             work/mail-real/build-verification.txt
             work/mail-real/native-tests-verification.txt
           if-no-files-found: error

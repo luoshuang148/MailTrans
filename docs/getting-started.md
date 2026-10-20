@@ -2,7 +2,7 @@
 
 [Home](../README.md) · [简体中文](getting-started.zh-CN.md)
 
-MailTrans 0.11 is an experimental development preview. The [release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0) provides an ad-hoc signed app ZIP and SHA-256 file. It is **not Developer ID signed or notarized**; downloaded-app acceptance and independent Mac installation remain unverified. If macOS blocks the preview, build from source rather than disabling security controls.
+MailTrans 0.11.1 is an experimental development preview. The [release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1) provides an ad-hoc signed app ZIP and SHA-256 file. It is **not Developer ID signed or notarized**; downloaded-app acceptance and independent Mac installation remain unverified. If macOS blocks the preview, build from source rather than disabling security controls.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ Output: `outputs/mail-translation-probe/MailTrans.app`. Intermediate files are k
 
 For an existing installation, follow [Update](#update) first.
 
-1. Download the app ZIP and its matching `.sha256` file from the [development release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0). In the download folder, check `shasum -a 256 -c MailTrans-0.11.0-macos-arm64-development.zip.sha256`, then extract the ZIP with Archive Utility. Source builders can use their generated app instead.
+1. Download the app ZIP and its matching `.sha256` file from the [development release](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1). In the download folder, check `shasum -a 256 -c MailTrans-0.11.1-macos-arm64-development.zip.sha256`, then extract the ZIP with Archive Utility. Source builders can use their generated app instead.
 2. Move `MailTrans.app` to `/Applications` and open that copy. Do not enable automatic launch from Downloads or a temporary/translocated path. The development signature checks integrity, not publisher identity. If macOS blocks launch, report the exact message or build from source; do not disable system-wide protections.
 3. First-run **MailTrans 设置** (Setup) works even with Mail closed. Use **打开“邮件”** to open Mail, then go to **Mail → Settings → Extensions** and enable **MailTrans**. The setup registration check cannot prove that Mail's enable checkbox is on; confirm it there.
 4. Check the English→Chinese model status. **准备英中语言包** opens Apple's native model preparation; initial preparation may require a download. Cancelling preserves the original message.
@@ -61,7 +61,7 @@ MailKit's permission dialog may mention reading all email and modifying outgoing
 - **Other source languages:** click **翻译为中文** manually; support depends on Apple's available language pair.
 - **Automatic translation:** toggle **自动翻译英文邮件** in the menu. This defaults to on, remembers your choice, and keeps manual translation and cached switching available while paused.
 - **Cancel/retry:** **取消当前翻译** cancels the running translation; **重试上次失败的邮件** retries that exact cached message. An expired cache asks you to reopen the message. Translation workers time out after 120 seconds and keep the original.
-- **Status:** an error icon and hover text report failures; pause uses a pause icon. Other menu actions clear cache, reload the visible Mail message, open **设置与帮助…**, or quit.
+- **Status:** the menu and hover text show the last failure reason, error code and time; **忽略上次失败提示** clears only the warning. A successful retry or cache clearing also clears it. For diagnosis, run `log show --last 1h --predicate 'subsystem == "local.codex.mailtranslationprobe" AND category == "translation"'` in Terminal. Pause uses a pause icon. Other menu actions clear cache, reload the visible Mail message, open **设置与帮助…**, or quit.
 
 ## Optional automatic launch
 
@@ -137,6 +137,7 @@ This does not remove mailbox messages or Apple language models.
 | No extension listed | Install the `/Applications` copy and register its `.appex`; restart Mail, then open MailTrans. Check the minimum OS version. |
 | English remains untranslated | Enable the extension and run MailTrans. Prepare the language pair manually, then use **重新加载当前邮件**. Check that the email is not signed/encrypted or over the limits in the README. |
 | `model_missing` | Prepare the correct language pair through the native prompt, then retry. The same worker has returned different results in a synced Documents build path and an installed `/Applications` path; the cause remains unresolved. |
+| Warning icon without a visible cause | Open the menu and read **上次失败：…** with its code and time. Retry the exact message or dismiss the warning. The same details are written to the `translation` `os_log` category without message content. |
 | A signature error mentions FinderInfo/resource forks | Build outside iCloud/other synchronized folders and copy a fresh build. The build removes only signing-incompatible metadata from generated bundles; synchronized folders can add it again. Re-run signature verification. |
 | macOS blocks the app | This is an ad-hoc signed development build, not a notarized distribution. Include the exact warning and environment in a compatibility report. |
 | No translation button on a Chinese email | Expected: original Chinese bodies bypass the extension, including Chinese-first replies with English quotes or signatures. |
