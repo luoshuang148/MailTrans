@@ -35,6 +35,11 @@ Environment: macOS 26.4 / Apple Silicon arm64 / Xcode 26.6 (17F113) / macOS SDK 
 - The installed worker passed the real English→Chinese translation check, ordered batches, Chinese preservation, provider selection and invalid-input checks.
 - Previous installation backup: `work/mail-real/installed-v010-before-v011.app`. That path is ignored local state, not part of the release.
 
+## Hosted CI
+
+- [GitHub Actions run 39373962321](https://github.com/luoshuang148/MailTrans/actions/runs/39373962321) passed both portable and ARM native jobs, including full build, signature verification and development packaging.
+- Its `MailTrans-0.11.0-macos-arm64-development.zip` is byte-for-byte identical to the locally packaged ZIP and has the same SHA-256: `b5642d97ea6d8485c022f92082e302c664469fdf6b4c797069fd657af6b866da`.
+
 ## Limits
 
 - A human click-through in the real Mail window for this revision was not performed. The host and extension process launched from `/Applications`, but default-original display, switching position and perceived flash still require live acceptance.
