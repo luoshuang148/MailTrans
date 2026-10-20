@@ -2,6 +2,20 @@
 
 User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/MailTrans/commits/main/) for implementation details.
 
+## v0.11.0 — Original-first reading and freeze fixes (2026-10-20)
+
+- Keep an English message in its original view by default. Automatic translation is prepared in the background and cached, but only an explicit **翻译为中文** click activates the Chinese reading view.
+- Preserve the cached translation when **显示原文** is chosen, so switching back does not rerun the model.
+- Fix cache scans that read every original and translation in full, causing long stalls and high memory use. Recent-message and view checks now use bounded file metadata, with synchronized cache mutations.
+- Reuse the parsed MIME tree within a request and clear stale text segments before rendering.
+- Avoid full MIME parsing and language detection when Mail reloads an already-active cached translation, reducing the visible reload delay.
+- Move automatic cache scans off the main thread and avoid re-activating Mail when it is already frontmost.
+- Bound worker shutdown and pipe draining when a grandchild keeps stdout open, preventing a stuck translation task.
+- Keep automatic English translation available; there is still no cloud provider or automatic cloud fallback.
+- The app remains ad-hoc signed and unnotarized. Mail can still briefly redraw when its reading view reloads.
+
+中文：英文邮件默认继续显示原文，后台准备并缓存中文译文，只有点击“翻译为中文”才切换视图；恢复原文后译文仍保留。修复缓存扫描读取整封邮件导致的卡死、重复解析与视图刷新开销，并限制子进程退出等待。仍无云端翻译，应用仍未公证。
+
 ## v0.10.0 — Public development preview (2026-10-15)
 
 - Add native first-run setup for Mail, extension registration guidance, model availability, and optional automatic launch. Setup remains available with Mail closed.
