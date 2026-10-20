@@ -5,6 +5,12 @@
 #import "MailLifecycle.h"
 #import "MTProcessRunner.h"
 #import "MTSetupController.h"
+#import <os/log.h>
+
+static NSString * const MTLastFailureCodeKey = @"MTLastFailureCode";
+static NSString * const MTLastFailureMessageKey = @"MTLastFailureMessage";
+static NSString * const MTLastFailureTimeKey = @"MTLastFailureTime";
+static NSString * const MTLastFailureCacheKey = @"MTLastFailureCacheKey";
 
 @interface ProbeAppDelegate : NSObject <NSApplicationDelegate, NSMenuItemValidation>
 @property NSStatusItem *statusItem;
@@ -26,9 +32,25 @@
 @property BOOL workingAutomatic;
 @property BOOL hasFailure;
 @property(copy) NSString *lastFailedKey;
+@property(copy) NSString *lastFailureCode;
+@property(copy) NSString *lastFailureMessage;
+@property NSTimeInterval lastFailureTime;
+@property NSMenu *statusMenu;
+@property NSMenuItem *lastFailureItem;
+@property NSMenuItem *retryFailureItem;
+@property NSMenuItem *dismissFailureItem;
 @property BOOL scanScheduled;
 @property BOOL scanAgain;
 @end
+static os_log_t MTDiagnosticLog(void){
+    static os_log_t log;
+    static dispatch_once_t once;
+    dispatch_once(&once,^{log=os_log_create("local.codex.mailtranslationprobe","translation");});
+    return log;
+}
+static NSString *MTKeyPrefix(NSString *key){
+    return key.length?[key substringToIndex:MIN(key.length,(NSUInteger)10)]:@"-";
+}
 static dispatch_queue_t MTBackgroundWorkQueue(void){
     static dispatch_queue_t queue;
     static dispatch_once_t once;
@@ -38,7 +60,6 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
 @implementation ProbeAppDelegate
 - (void)setStatusText:(NSString *)text {
     _statusText=[text copy]?:@"";
-    self.statusItem.button.toolTip=_statusText;
     [self updateStatusIcon];
 }
 - (NSURL *)cacheURL {return [NSURL fileURLWithPath:[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Containers/local.codex.mailtranslationprobe.extension/Data/Library/Caches/MailTranslation"] isDirectory:YES];}
@@ -51,10 +72,71 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
     NSString *symbol=self.hasFailure?@"exclamationmark.bubble":(self.automaticTranslationEnabled?@"character.bubble":@"pause.circle");
     NSImage *icon=[NSImage imageWithSystemSymbolName:symbol accessibilityDescription:self.hasFailure?@"MailTrans · 请检查翻译状态":@"MailTrans"];
     icon.template=YES;if(icon)self.statusItem.button.image=icon;
+    NSString *tooltip=self.statusText?:@"";
+    if(self.hasFailure&&self.lastFailureMessage.length){
+        tooltip=[NSString stringWithFormat:@"%@\n上次失败：%@（%@）",tooltip,self.lastFailureMessage,self.lastFailureCode?:@"unknown"];
+    }
+    self.statusItem.button.toolTip=tooltip;
 }
-- (void)recordFailure:(NSString *)text key:(NSString *)key {
-    self.hasFailure=YES;if([MTCache isValidKey:key])self.lastFailedKey=key;
-    self.statusText=text;
+- (void)updateFailureMenu {
+    BOOL hasRecord=self.lastFailureMessage.length>0;
+    self.lastFailureItem.hidden=!hasRecord;
+    self.dismissFailureItem.hidden=!hasRecord;
+    if(hasRecord){
+        NSString *detail=self.lastFailureCode.length?self.lastFailureCode:@"unknown";
+        if(self.lastFailureTime>0){
+            NSDateFormatter *formatter=[NSDateFormatter new];
+            formatter.dateFormat=@"MM-dd HH:mm";
+            detail=[NSString stringWithFormat:@"%@ · %@",detail,[formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:self.lastFailureTime]]];
+        }
+        self.lastFailureItem.title=[NSString stringWithFormat:@"上次失败：%@（%@）",self.lastFailureMessage,detail];
+        self.lastFailureItem.toolTip=self.lastFailureCode.length?[NSString stringWithFormat:@"错误代码：%@",self.lastFailureCode]:nil;
+    }
+    self.dismissFailureItem.enabled=hasRecord;
+}
+- (void)recordFailure:(NSString *)text key:(NSString *)key code:(NSString *)code {
+    self.hasFailure=YES;
+    self.lastFailedKey=[MTCache isValidKey:key]?key:nil;
+    self.lastFailureCode=code.length?code:@"unknown";
+    self.lastFailureMessage=text.length?text:@"翻译未完成，原文已保留。";
+    self.lastFailureTime=NSDate.date.timeIntervalSince1970;
+    NSUserDefaults *preferences=self.lifecyclePreferences;
+    [preferences setObject:self.lastFailureCode forKey:MTLastFailureCodeKey];
+    [preferences setObject:self.lastFailureMessage forKey:MTLastFailureMessageKey];
+    [preferences setDouble:self.lastFailureTime forKey:MTLastFailureTimeKey];
+    if(self.lastFailedKey)[preferences setObject:self.lastFailedKey forKey:MTLastFailureCacheKey];
+    else [preferences removeObjectForKey:MTLastFailureCacheKey];
+    [preferences synchronize];
+    os_log_error(MTDiagnosticLog(),"translation failed code=%{public}@ cache_key=%{public}@",self.lastFailureCode,MTKeyPrefix(self.lastFailedKey));
+    [self updateFailureMenu];
+    self.statusText=self.lastFailureMessage;
+}
+- (void)clearFailureState {
+    self.hasFailure=NO;self.lastFailedKey=nil;self.lastFailureCode=nil;self.lastFailureMessage=nil;self.lastFailureTime=0;
+    NSUserDefaults *preferences=self.lifecyclePreferences;
+    for(NSString *key in @[MTLastFailureCodeKey,MTLastFailureMessageKey,MTLastFailureTimeKey,MTLastFailureCacheKey])[preferences removeObjectForKey:key];
+    [preferences synchronize];
+    [self updateFailureMenu];
+    [self updateStatusIcon];
+}
+- (void)dismissFailure:(id)sender {
+    [self clearFailureState];
+    self.statusText=@"已忽略上次失败提示。其中详细错误已清除。";
+}
+- (void)restoreLastFailure {
+    NSUserDefaults *preferences=self.lifecyclePreferences;
+    NSString *message=[preferences stringForKey:MTLastFailureMessageKey];
+    if(!message.length){[self updateFailureMenu];return;}
+    self.lastFailureMessage=message;
+    self.lastFailureCode=[preferences stringForKey:MTLastFailureCodeKey]?:@"unknown";
+    self.lastFailureTime=[preferences doubleForKey:MTLastFailureTimeKey];
+    NSString *key=[preferences stringForKey:MTLastFailureCacheKey];
+    BOOL recent=self.lastFailureTime>0&&NSDate.date.timeIntervalSince1970-self.lastFailureTime<=1800;
+    if([MTCache isValidKey:key]&&recent&&[self.cache hasSourceForKey:key]){
+        self.lastFailedKey=key;self.hasFailure=YES;
+    }
+    [self updateFailureMenu];
+    [self updateStatusIcon];
 }
 - (void)cancelTranslationForKey:(NSString *)key {
     if(!key.length)return;
@@ -77,7 +159,7 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
 }
 - (void)retryLastFailure:(id)sender {
     NSString *key=self.lastFailedKey.copy;
-    if(!key.length||![self.cache hasSourceForKey:key]){[self recordFailure:@"这封邮件缓存已过期，请在 Mail 中重新打开后再翻译。" key:nil];return;}
+    if(!key.length||![self.cache hasSourceForKey:key]){[self recordFailure:@"这封邮件缓存已过期，请在 Mail 中重新打开后再翻译。" key:nil code:@"cache_expired"];return;}
     [self translateKey:key];
 }
 - (void)showSetup {
@@ -95,6 +177,7 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
     if(item.action==@selector(toggleAutomaticTranslation:)){item.state=self.automaticTranslationEnabled?NSControlStateValueOn:NSControlStateValueOff;return YES;}
     if(item.action==@selector(cancelCurrentTranslation:))return self.busy&&self.workingKey.length;
     if(item.action==@selector(retryLastFailure:))return !self.busy&&self.lastFailedKey.length;
+    if(item.action==@selector(dismissFailure:))return self.lastFailureMessage.length>0;
     return YES;
 }
 - (NSMenu *)makeStatusMenu {
@@ -103,13 +186,18 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
     NSMenuItem *refresh=[[NSMenuItem alloc]initWithTitle:@"重新加载当前邮件" action:@selector(refreshAction:) keyEquivalent:@""];refresh.target=self;[menu addItem:refresh];
     [menu addItem:NSMenuItem.separatorItem];
     for(NSDictionary *entry in @[@{@"title":@"自动翻译英文邮件",@"action":NSStringFromSelector(@selector(toggleAutomaticTranslation:))},
-                                @{@"title":@"取消当前翻译",@"action":NSStringFromSelector(@selector(cancelCurrentTranslation:))},
-                                @{@"title":@"重试上次失败的邮件",@"action":NSStringFromSelector(@selector(retryLastFailure:))},
-                                @{@"title":@"设置与帮助…",@"action":NSStringFromSelector(@selector(showSetupAction:))}]){
+                                @{@"title":@"取消当前翻译",@"action":NSStringFromSelector(@selector(cancelCurrentTranslation:))}]){
         NSMenuItem *item=[[NSMenuItem alloc]initWithTitle:entry[@"title"] action:NSSelectorFromString(entry[@"action"]) keyEquivalent:@""];item.target=self;[menu addItem:item];
     }
+    self.lastFailureItem=[[NSMenuItem alloc]initWithTitle:@"" action:nil keyEquivalent:@""];
+    self.lastFailureItem.enabled=NO;self.lastFailureItem.hidden=YES;[menu addItem:self.lastFailureItem];
+    NSMenuItem *retry=[[NSMenuItem alloc]initWithTitle:@"重试上次失败的邮件" action:@selector(retryLastFailure:) keyEquivalent:@""];retry.target=self;self.retryFailureItem=retry;[menu addItem:retry];
+    NSMenuItem *dismiss=[[NSMenuItem alloc]initWithTitle:@"忽略上次失败提示" action:@selector(dismissFailure:) keyEquivalent:@""];dismiss.target=self;self.dismissFailureItem=dismiss;[menu addItem:dismiss];
+    NSMenuItem *setup=[[NSMenuItem alloc]initWithTitle:@"设置与帮助…" action:@selector(showSetupAction:) keyEquivalent:@""];setup.target=self;[menu addItem:setup];
     [menu addItem:NSMenuItem.separatorItem];
     NSMenuItem *quit=[[NSMenuItem alloc]initWithTitle:@"退出 MailTrans" action:@selector(quitManually:) keyEquivalent:@""];quit.target=self;[menu addItem:quit];
+    self.statusMenu=menu;
+    [self updateFailureMenu];
     return menu;
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
@@ -124,7 +212,7 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
     self.statusItem=[NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
     NSImage *icon=[NSImage imageWithSystemSymbolName:@"character.bubble" accessibilityDescription:@"MailTrans"];icon.template=YES;
     if(icon)self.statusItem.button.image=icon;else self.statusItem.button.title=@"译";
-    self.statusItem.menu=[self makeStatusMenu];self.statusText=@"MailTrans · 就绪";
+    self.statusItem.menu=[self makeStatusMenu];self.statusText=@"MailTrans · 就绪";[self restoreLastFailure];
     [NSDistributedNotificationCenter.defaultCenter addObserver:self selector:@selector(cacheChanged:) name:@"local.codex.mailtranslationprobe.cacheChanged" object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
     [self refreshState];[self scheduleAutomaticTranslations];
     [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(cleanExpired:) userInfo:nil repeats:YES];
@@ -247,7 +335,7 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
             if(![self.gate isCurrent:token forKey:requestKey]){self.statusText=@"已保留原文，取消了迟到的翻译结果。";[self startNextAutomaticTranslation];return;}
             if(automatic&&[result[@"errorCode"] isEqual:@"source_missing"]){[self startNextAutomaticTranslation];return;}
             if([result[@"errorCode"] isEqual:@"model_missing"]){
-                if(automatic){[self recordFailure:@"本邮件还缺少本地语言包。请在邮件上方点“翻译为中文”，按提示准备后继续。原文已保留。" key:requestKey];[self startNextAutomaticTranslation];return;}
+                if(automatic){[self recordFailure:@"本邮件还缺少本地语言包。请在邮件上方点“翻译为中文”，按提示准备后继续。原文已保留。" key:requestKey code:@"model_missing"];[self startNextAutomaticTranslation];return;}
                 NSString *language=[result[@"source"] isKindOfClass:NSString.class]?result[@"source"]:@"en";
                 self.statusText=@"需要准备本地语言包。完成后将继续翻译这封邮件。";
                 [self prepareLanguage:language completion:^(BOOL ready){
@@ -255,9 +343,9 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
                 }];return;
             }
             if(!display || ![self.cache setDisplay:display forKey:requestKey activate:!automatic]){
-                [self recordFailure:([result[@"message"] isKindOfClass:NSString.class]?result[@"message"]:@"译文未能显示，原文已保留。") key:requestKey];[self startNextAutomaticTranslation];return;
+                NSString *failureCode=[result[@"errorCode"] isKindOfClass:NSString.class]?result[@"errorCode"]:@"display_failed";[self recordFailure:([result[@"message"] isKindOfClass:NSString.class]?result[@"message"]:@"译文未能显示，原文已保留。") key:requestKey code:failureCode];[self startNextAutomaticTranslation];return;
             }
-            [self.automaticQueue completeKey:requestKey];if([self.lastFailedKey isEqual:requestKey])self.lastFailedKey=nil;self.hasFailure=self.lastFailedKey.length>0;
+            [self.automaticQueue completeKey:requestKey];if([self.lastFailedKey isEqual:requestKey])[self clearFailureState];
             self.statusText=automatic?[NSString stringWithFormat:@"译文已就绪：%@。默认显示原文，点击“翻译为中文”即可查看。",subject]:[NSString stringWithFormat:@"已翻译：%@。可随时显示原文。",subject];
             [self refreshState];if(!automatic){[self reloadMail];[self activateMail];}[self startNextAutomaticTranslation];
         });
@@ -298,7 +386,7 @@ static dispatch_queue_t MTBackgroundWorkQueue(void){
 - (void)clearCache:(id)sender {
     for(NSDictionary *mail in self.cache.recentMessages){[self.gate invalidateKey:mail[@"key"]];[self.automaticQueue cancelKey:mail[@"key"]];}
     if(self.workingKey)[self cancelTranslationForKey:self.workingKey];
-    self.lastFailedKey=nil;self.hasFailure=NO;
+    [self clearFailureState];
     [self.cache clear];[self refreshState];[self reloadMail];self.statusText=@"本地缓存已清空，原邮箱中的邮件未改动。";
 }
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender { return NO; }

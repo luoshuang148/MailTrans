@@ -136,9 +136,22 @@ int main(void) {@autoreleasepool {
   [control translateKey:mail.key];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
   while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
   if(![[control valueForKey:@"lastFailedKey"]isEqual:mail.key]||![[control valueForKey:@"hasFailure"]boolValue]){fputs("FAIL: timeout must retain exact retry key and visible error state\n",stderr);okay=NO;}
+  if(![[control valueForKey:@"lastFailureCode"]isEqual:@"timeout"]||![[control valueForKey:@"lastFailureMessage"]isEqual:@"Timed out"]||![[prefs stringForKey:@"MTLastFailureCode"]isEqual:@"timeout"]||![[prefs stringForKey:@"MTLastFailureCacheKey"]isEqual:mail.key]){
+    fputs("FAIL: failure code, message and exact cache key must be persisted for diagnosis\n",stderr);okay=NO;
+  }
+  NSMenu *failureMenu=[control makeStatusMenu];BOOL failureInfoFound=NO,dismissFound=NO;
+  for(NSMenuItem *item in failureMenu.itemArray){
+    if(!item.enabled&&[item.title hasPrefix:@"上次失败："])failureInfoFound=YES;
+    if(item.action==@selector(dismissFailure:))dismissFound=YES;
+  }
+  if(!failureInfoFound||!dismissFound){fputs("FAIL: menu must expose the persisted failure reason and a dismissal action\n",stderr);okay=NO;}
+  UIProbe *restored=[UIProbe new];restored.lifecyclePreferences=prefs;restored.cache=control.cache;[restored restoreLastFailure];
+  if(![[restored valueForKey:@"hasFailure"]boolValue]||![[restored valueForKey:@"lastFailureCode"]isEqual:@"timeout"]){fputs("FAIL: a recent failure must restore across host instances\n",stderr);okay=NO;}
   control.workerResult=@{@"translations":@[@"重试后的译文。"]};[control retryLastFailure:nil];deadline=[NSDate dateWithTimeIntervalSinceNow:2];
   while(control.busy&&deadline.timeIntervalSinceNow>0)[NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
-  if(![control.cache displayForKey:mail.key]||[[control valueForKey:@"hasFailure"]boolValue]){fputs("FAIL: explicit retry must recover the same message and clear error state\n",stderr);okay=NO;}
+  if(![control.cache displayForKey:mail.key]||[[control valueForKey:@"hasFailure"]boolValue]||[prefs objectForKey:@"MTLastFailureCode"]||[prefs objectForKey:@"MTLastFailureMessage"]){fputs("FAIL: explicit retry must recover the same message and clear persisted error state\n",stderr);okay=NO;}
+  [control recordFailure:@"Dismissed diagnostic" key:mail.key code:@"test_dismiss"];[control dismissFailure:nil];
+  if([[control valueForKey:@"hasFailure"]boolValue]||[[control valueForKey:@"lastFailureMessage"]length]||![control.cache hasSourceForKey:mail.key]){fputs("FAIL: dismissing a failure must preserve the cache and clear the error state\n",stderr);okay=NO;}
   [control setValue:mail.key forKey:@"lastFailedKey"];[control.cache clear];NSUInteger calls=control.workerCalls;[control retryLastFailure:nil];
   if(control.workerCalls!=calls||![control.statusText containsString:@"重新打开"]){fputs("FAIL: expired retry must request reopening rather than translate another message\n",stderr);okay=NO;}
   [control.cache rememberMessage:mail];control.workingKey=mail.key;control.busy=YES;[control setValue:@YES forKey:@"workingAutomatic"];

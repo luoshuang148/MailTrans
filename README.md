@@ -4,7 +4,7 @@
   <p><strong>Read English emails in Chinese. Stay in Apple Mail.</strong></p>
   <p>A macOS MailKit extension powered by Apple's on-device Translation framework.</p>
   <p>
-    <img src="https://img.shields.io/badge/version-0.11-2563eb" alt="Version 0.11">
+    <img src="https://img.shields.io/badge/version-0.11.1-2563eb" alt="Version 0.11.1">
     <img src="https://img.shields.io/badge/macOS-26.4%2B-111827" alt="macOS 26.4 or later">
     <img src="https://img.shields.io/badge/architecture-Apple%20Silicon-111827" alt="Apple Silicon">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license"></a>
@@ -12,14 +12,14 @@
     <a href="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml"><img src="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and regressions"></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0">Pre-release</a> · <a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1">Pre-release</a> · <a href="docs/getting-started.md">Getting started</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">Report an issue</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 </div>
 
 ![Illustrated MailTrans workflow using synthetic email content; not an application screenshot](docs/assets/mailtrans-overview.svg)
 
 MailTrans translates email body text into **Simplified Chinese** inside Apple Mail's reading view. English emails show the original by default while a Chinese translation is prepared in the background; click to view the Chinese version. MailTrans uses Apple's local translation models and keeps the original mailbox message intact.
 
-> **Development pre-release.** Download the app ZIP and SHA-256 checksum from [v0.11.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0), or build from source. The app is ad-hoc signed and **not notarized**; macOS may block downloaded copies. Tested locally on Apple Silicon / macOS 26.4. Independent Mac installation remains unverified. See the [setup guide](docs/getting-started.md) and [compatibility checklist](docs/compatibility.md).
+> **Development pre-release.** Download the app ZIP and SHA-256 checksum from [v0.11.1](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1), or build from source. The app is ad-hoc signed and **not notarized**; macOS may block downloaded copies. Tested locally on Apple Silicon / macOS 26.4. Independent Mac installation remains unverified. See the [setup guide](docs/getting-started.md) and [compatibility checklist](docs/compatibility.md).
 
 ## Features
 

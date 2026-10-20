@@ -4,7 +4,7 @@
   <p><strong>英文邮件，中文阅读。继续使用 Apple Mail。</strong></p>
   <p>基于 MailKit 与苹果本地 Translation 框架的 macOS 邮件阅读扩展。</p>
   <p>
-    <img src="https://img.shields.io/badge/version-0.11-2563eb" alt="版本 0.11">
+    <img src="https://img.shields.io/badge/version-0.11.1-2563eb" alt="版本 0.11.1">
     <img src="https://img.shields.io/badge/macOS-26.4%2B-111827" alt="macOS 26.4 及以上">
     <img src="https://img.shields.io/badge/architecture-Apple%20Silicon-111827" alt="Apple Silicon">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT 许可证"></a>
@@ -12,14 +12,14 @@
     <a href="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml"><img src="https://github.com/luoshuang148/MailTrans/actions/workflows/ci.yml/badge.svg?branch=main" alt="构建与回归检查"></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
+  <p><a href="https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1">预发布版本</a> · <a href="docs/getting-started.zh-CN.md">安装与使用</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="https://github.com/luoshuang148/MailTrans/issues/new/choose">反馈问题</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
 </div>
 
 ![MailTrans 工作流程示意，使用人工邮件内容，并非应用截图](docs/assets/mailtrans-overview.svg)
 
 MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**。英文邮件默认显示原文，后台准备译文，点击即可查看中文。翻译由苹果本地模型完成，邮箱里的原始邮件保持不变。
 
-> **开发预发布版。** 可从 [v0.11.0](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.0) 下载应用 ZIP 与 SHA-256 校验文件，或从源码构建。应用为临时签名，**未经公证**，macOS 可能阻止下载副本。已在 Apple Silicon / macOS 26.4 本地验证，其他独立 Mac 的安装尚未验证。详见[安装指南](docs/getting-started.zh-CN.md)及[兼容性清单](docs/compatibility.md)。
+> **开发预发布版。** 可从 [v0.11.1](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1) 下载应用 ZIP 与 SHA-256 校验文件，或从源码构建。应用为临时签名，**未经公证**，macOS 可能阻止下载副本。已在 Apple Silicon / macOS 26.4 本地验证，其他独立 Mac 的安装尚未验证。详见[安装指南](docs/getting-started.zh-CN.md)及[兼容性清单](docs/compatibility.md)。
 
 ## 功能
 

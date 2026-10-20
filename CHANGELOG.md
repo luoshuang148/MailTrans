@@ -2,6 +2,16 @@
 
 User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/MailTrans/commits/main/) for implementation details.
 
+## v0.11.1 — Failure diagnostics (2026-10-21)
+
+- Persist the last translation failure code, message, cache key and timestamp, and restore the error state for the same message when the host relaunches.
+- Show the exact failure reason and time in the menu-bar menu and tooltip instead of only a generic warning icon. Add **忽略上次失败提示** to clear the diagnostic without deleting cached mail.
+- Clear the persisted failure after a successful retry or cache clearing; keep the cache when dismissing only the warning.
+- Log the failure code and a shortened cache key to `os_log` (`local.codex.mailtranslationprobe`, category `translation`) without logging message content.
+- No translation-provider, model-download or cloud-fallback changes. The app remains ad-hoc signed and unnotarized.
+
+中文：持久化上次翻译失败的错误代码、说明、缓存键和时间；重启后在邮件仍可用时恢复错误状态。菜单栏和 tooltip 显示具体失败原因与时间，并新增“忽略上次失败提示”，只清提示、不删缓存。成功重试或清空缓存会清除记录；日志只写错误码与短缓存键，不写邮件内容。翻译引擎与云端策略未变，应用仍未公证。
+
 ## v0.11.0 — Original-first reading and freeze fixes (2026-10-20)
 
 - Keep an English message in its original view by default. Automatic translation is prepared in the background and cached, but only an explicit **翻译为中文** click activates the Chinese reading view.

@@ -48,8 +48,8 @@ class PackageReleaseTests(unittest.TestCase):
         contents.mkdir(parents=True)
         (contents / 'Info.plist').write_bytes(plistlib.dumps({
             'CFBundleIdentifier': identifier, 'CFBundleExecutable': executable,
-            'CFBundlePackageType': kind, 'CFBundleShortVersionString': '0.11',
-            'CFBundleVersion': '11', 'LSMinimumSystemVersion': '26.4',
+            'CFBundlePackageType': kind, 'CFBundleShortVersionString': '0.11.1',
+            'CFBundleVersion': '12', 'LSMinimumSystemVersion': '26.4',
         }))
         self.executable(contents / 'MacOS' / executable)
         (contents / '_CodeSignature').mkdir()
@@ -62,7 +62,7 @@ class PackageReleaseTests(unittest.TestCase):
     def test_app_only_archive_checksum_permissions_and_round_trip(self):
         verified = []
         archive, checksum = self.create(lambda app: verified.append(Path(app)))
-        self.assertEqual(archive.name, 'MailTrans-0.11.0-macos-arm64-development.zip')
+        self.assertEqual(archive.name, 'MailTrans-0.11.1-macos-arm64-development.zip')
         with zipfile.ZipFile(archive) as zipped:
             self.assertTrue(all(name.startswith('MailTrans.app/') for name in zipped.namelist()))
             self.assertNotIn('private-mail.eml', '\n'.join(zipped.namelist()))
@@ -157,7 +157,7 @@ class PackageReleaseTests(unittest.TestCase):
                         raise ValueError('signature invalid')
                 with self.assertRaisesRegex(ValueError, 'signature invalid'):
                     self.create(verify)
-                self.assertFalse((self.root / 'release/MailTrans-0.11.0-macos-arm64-development.zip').exists())
+                self.assertFalse((self.root / 'release/MailTrans-0.11.1-macos-arm64-development.zip').exists())
 
     def test_output_inside_app_rejected(self):
         with self.assertRaisesRegex(ValueError, 'output'):
