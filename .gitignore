@@ -25,4 +25,7 @@ __pycache__/
 *.source.eml
 *.translated.eml
 **/MailTranslation/
-!/outputs/mail-translation-probe/layout-sample.eml
+
+# Development-process artifacts stay local only
+/docs/superpowers/
+/outputs/
