@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="outputs/mail-translation-probe/assets/mail-translation-icon.png" width="112" alt="MailTrans 应用图标">
+  <img src="assets/mail-translation-icon.png" width="112" alt="MailTrans 应用图标">
   <h1>MailTrans</h1>
   <p><strong>英文邮件，中文阅读。继续使用 Apple Mail。</strong></p>
   <p>基于 MailKit 与苹果本地 Translation 框架的 macOS 邮件阅读扩展。</p>
@@ -45,10 +45,10 @@ Mail 未打开时也可完成首次设置。翻译任务在 120 秒后超时，�
 ```sh
 git clone https://github.com/luoshuang148/MailTrans.git
 cd MailTrans
-python3 outputs/mail-translation-probe/source/build.py
+python3 Sources/build.py
 ```
 
-构建会执行原生测试、打包扩展及辅助程序，生成临时签名的 `outputs/mail-translation-probe/MailTrans.app`，不会自动安装或启用后台服务。
+构建会执行原生测试、打包扩展及辅助程序，生成临时签名的 `outputs/MailTrans.app`，不会自动安装或启用后台服务。
 
 接着按照[安装指南](docs/getting-started.zh-CN.md#安装与启用)，将应用放入 `/Applications`，在 Mail 中启用扩展并准备语言模型。已有安装时请先阅读更新步骤。
 

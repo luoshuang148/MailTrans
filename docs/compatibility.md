@@ -1,6 +1,6 @@
 # Compatibility and acceptance checklist
 
-MailTrans 0.11.1 (build 12) targets Apple Silicon and macOS 26.4 or newer with Apple Mail and locally available English→Chinese translation. A full source build requires macOS SDK 26.5 or newer. Intel Macs and older macOS versions are unsupported. Language preparation may need Apple's model download; translating uses the local worker afterward.
+MailTrans 0.11.2 (build 13) targets Apple Silicon and macOS 26.4 or newer with Apple Mail and locally available English→Chinese translation. A full source build requires macOS SDK 26.5 or newer. Intel Macs and older macOS versions are unsupported. Language preparation may need Apple's model download; translating uses the local worker afterward.
 
 CI checks portable packaging, native regressions and full compilation/signature integrity on its hosted ARM image. Its test executables target that runner's OS and do not exercise installed translation models or real mailboxes. A passing CI run does not establish macOS 26.4 behavior, another physical Mac, downloaded-app Gatekeeper acceptance, first-install extension approval or live translation quality. The development ZIP is ad-hoc signed and unnotarized; no Developer ID/notarization result is implied.
 
@@ -27,6 +27,6 @@ Run the following checks with synthetic messages and note pass/fail, observed be
 - **Update:** open the release-page entry and verify it opens the expected releases page without downloading or replacing the app automatically.
 - **Uninstall:** cancel the native confirmation once, then confirm using a disposable test installation. Check the known LaunchAgent is removed before the exact app is trashed; mailbox data, parent folders and Apple language models remain. Record how running Mail is handled.
 
-The [0.11.1 failure-diagnostics report](superpowers/reports/2026-10-21-failure-diagnostics.md) records the new local evidence. The [0.11 validation report](superpowers/reports/2026-10-20-original-first-freeze-fixes.md) keeps the earlier default-original evidence and remaining live-Mail limitation.
+Local failure-diagnostics and freeze-fix verification reports are kept outside the repository as development evidence; they may describe older behavior, so current user documentation and source take precedence.
 
 For a future notarized release, add Developer ID identity/team verification, successful notarization/stapling/assessment, and opening the actual downloaded, quarantined final artifact on a separate Mac. See [distribution instructions](distribution.md) for the current preview limitations and release process.

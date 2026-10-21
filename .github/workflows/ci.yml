@@ -22,7 +22,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Run real ZIP and build-planning regressions
-        run: python3 -m unittest discover -s outputs/mail-translation-probe/source -p 'test_*.py' -v
+        run: python3 -m unittest discover -s Sources -p 'test_*.py' -v
 
   macos:
     name: ARM native regressions and development app
@@ -42,19 +42,19 @@ jobs:
       - name: Run native regressions and build the full app
         # Default Xcode is selected by the image; build.py honors DEVELOPER_DIR.
         # SDK <26.5 or a non-ARM runner is an explicit failure, never a skipped pass.
-        run: python3 outputs/mail-translation-probe/source/build.py
+        run: python3 Sources/build.py
       - name: Verify exact development archive and checksum
         run: |
-          python3 outputs/mail-translation-probe/source/package_release.py --output-dir work/release
+          python3 Sources/package_release.py --output-dir work/release
           cd work/release
-          shasum -a 256 -c MailTrans-0.11.1-macos-arm64-development.zip.sha256
+          shasum -a 256 -c MailTrans-0.11.2-macos-arm64-development.zip.sha256
       - name: Upload development archive and verification records
         uses: actions/upload-artifact@v7
         with:
-          name: MailTrans-0.11.1-macos-arm64-development
+          name: MailTrans-0.11.2-macos-arm64-development
           path: |
-            work/release/MailTrans-0.11.1-macos-arm64-development.zip
-            work/release/MailTrans-0.11.1-macos-arm64-development.zip.sha256
+            work/release/MailTrans-0.11.2-macos-arm64-development.zip
+            work/release/MailTrans-0.11.2-macos-arm64-development.zip.sha256
             work/mail-real/build-verification.txt
             work/mail-real/native-tests-verification.txt
           if-no-files-found: error

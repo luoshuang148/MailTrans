@@ -22,12 +22,12 @@
 ```sh
 git clone https://github.com/luoshuang148/MailTrans.git
 cd MailTrans
-python3 outputs/mail-translation-probe/source/build.py
+python3 Sources/build.py
 ```
 
 脚本运行七组原生测试（核心、宿主、扩展、生命周期、子进程、应用管理、设置）、真实跨进程偏好检查及模型状态协议检查，编译宿主、扩展、翻译 worker 与辅助程序，并临时签名及验证应用包。
 
-产物为 `outputs/mail-translation-probe/MailTrans.app`，中间文件位于被 Git 忽略的 `work/mail-real/`。构建不安装应用、不启用扩展、不下载模型，也不安装 LaunchAgent。构建通过不等于实际翻译和 Mail 界面验证通过。
+产物为 `outputs/MailTrans.app`，中间文件位于被 Git 忽略的 `work/mail-real/`。构建不安装应用、不启用扩展、不下载模型，也不安装 LaunchAgent。构建通过不等于实际翻译和 Mail 界面验证通过。
 
 ## 安装与启用
 
@@ -66,8 +66,8 @@ codesign --verify --deep --strict '/Applications/MailTrans.app'
 可直接在**设置与帮助…**中启用或关闭自动联动。开发者仍可使用原 CLI；安装应用后，在仓库根目录执行：
 
 ```sh
-python3 outputs/mail-translation-probe/source/manage_lifecycle.py enable
-python3 outputs/mail-translation-probe/source/manage_lifecycle.py status
+python3 Sources/manage_lifecycle.py enable
+python3 Sources/manage_lifecycle.py status
 ```
 
 这会在 `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist` 安装当前用户的 LaunchAgent。无界面的 `MailTransLifecycle` 监听器观察应用进程变化，等待 Mail 启动；菜单栏主程序随 Mail 启动和退出。关闭 Mail 窗口不等于退出 Mail。Mail 关闭时手动打开 MailTrans，可保留设置窗口。
@@ -77,7 +77,7 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py status
 停用自动联动：
 
 ```sh
-python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
+python3 Sources/manage_lifecycle.py disable
 ```
 
 此操作移除监听器服务；如需完全停止翻译，还需在 Mail 设置中取消勾选扩展。
@@ -91,7 +91,7 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
 
    ```sh
    pluginkit -r '/Applications/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex'
-   pluginkit -r "$PWD/outputs/mail-translation-probe/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex"
+   pluginkit -r "$PWD/outputs/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex"
    ```
 
    从未注册的副本可能没有可移除的记录。
@@ -146,7 +146,7 @@ python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
 准备语言包后，可单独验证安装副本的真实翻译：
 
 ```sh
-python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
+python3 Sources/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
 此命令检查实际本地翻译、顺序、中文保留及错误路径，不验证 Mail 界面排版。仍有问题时通过[反馈表单](https://github.com/luoshuang148/MailTrans/issues/new/choose)，附人工复现材料和清理后的输出。

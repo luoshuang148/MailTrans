@@ -82,6 +82,6 @@ First GitHub pre-release, distributed as source. Application version remains 0.9
 
 ## Earlier prototypes
 
-Versions 0.2–0.5 introduced actual on-device translation, automatic English → Chinese translation, per-message state, original MIME preservation, one-action controls, and menu bar operation. These predate the initial Git baseline. Historical validation details are kept in the [test archive](outputs/mail-translation-probe/测试记录.md); older UI descriptions do not describe the current version.
+Versions 0.2–0.5 introduced actual on-device translation, automatic English → Chinese translation, per-message state, original MIME preservation, one-action controls, and menu bar operation. These predate the initial Git baseline. Historical validation details are kept outside the repository; older UI descriptions do not describe the current version.
 
 中文版本概览：0.9 完整跳过中文原文；0.8 统一 MailTrans 名称并加入可选 Mail 生命周期联动及相关竞争/偏好修复；0.7 新图标与精简菜单；0.6 沿用 Mail 图片隐私设置并建立 Git 基线。

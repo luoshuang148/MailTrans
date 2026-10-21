@@ -22,12 +22,12 @@ The app itself does not require Python or Xcode. Source builds use the selected 
 ```sh
 git clone https://github.com/luoshuang148/MailTrans.git
 cd MailTrans
-python3 outputs/mail-translation-probe/source/build.py
+python3 Sources/build.py
 ```
 
 The script runs seven native suites (core, app, extension, lifecycle, process runner, management, setup), a cross-process preferences check, and a model-status protocol check, then compiles and ad-hoc signs the application, extension, translation worker, and helpers. It verifies the generated package's signature.
 
-Output: `outputs/mail-translation-probe/MailTrans.app`. Intermediate files are kept in the ignored `work/mail-real/` directory. The build does not install the app, enable the Mail extension, download models, or install a LaunchAgent. Build success is separate from live translation and Mail rendering verification.
+Output: `outputs/MailTrans.app`. Intermediate files are kept in the ignored `work/mail-real/` directory. The build does not install the app, enable the Mail extension, download models, or install a LaunchAgent. Build success is separate from live translation and Mail rendering verification.
 
 ## Install and enable
 
@@ -68,8 +68,8 @@ MailKit's permission dialog may mention reading all email and modifying outgoing
 Enable/disable the option in **设置与帮助…**. The existing CLI remains available for developers; from the repository root, after installing the app:
 
 ```sh
-python3 outputs/mail-translation-probe/source/manage_lifecycle.py enable
-python3 outputs/mail-translation-probe/source/manage_lifecycle.py status
+python3 Sources/manage_lifecycle.py enable
+python3 Sources/manage_lifecycle.py status
 ```
 
 This installs a per-user LaunchAgent at `~/Library/LaunchAgents/local.codex.mailtranslationprobe.lifecycle.plist`. An invisible `MailTransLifecycle` process observes running applications and waits for Mail. The main menu bar app starts when Mail starts and exits when Mail quits; closing a Mail window does not count as quitting. Manually opening MailTrans while Mail is closed keeps setup available.
@@ -79,7 +79,7 @@ Manually quitting MailTrans keeps it stopped for the current Mail session, even 
 To disable automatic launch:
 
 ```sh
-python3 outputs/mail-translation-probe/source/manage_lifecycle.py disable
+python3 Sources/manage_lifecycle.py disable
 ```
 
 Disabling removes the watcher service; disable the Mail extension separately if you want to stop translation entirely.
@@ -93,7 +93,7 @@ Disabling removes the watcher service; disable the Mail extension separately if 
 
    ```sh
    pluginkit -r '/Applications/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex'
-   pluginkit -r "$PWD/outputs/mail-translation-probe/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex"
+   pluginkit -r "$PWD/outputs/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex"
    ```
 
    A copy that was never registered may have nothing to remove.
@@ -148,7 +148,7 @@ This does not remove mailbox messages or Apple language models.
 To validate the installed worker independently after preparing models:
 
 ```sh
-python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
+python3 Sources/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
 This tests real local translation, ordering, Chinese preservation, and error cases. It does not verify Mail's interface rendering. If an issue remains, use the [issue forms](https://github.com/luoshuang148/MailTrans/issues/new/choose) with a synthetic reproduction and sanitized output.

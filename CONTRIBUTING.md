@@ -17,7 +17,7 @@ Fork the repository, clone your fork, and create a focused branch. The build req
 From the repository root:
 
 ```sh
-python3 outputs/mail-translation-probe/source/build.py
+python3 Sources/build.py
 ```
 
 This compiles and runs seven native test suites plus cross-process preferences and model-status checks, packages the app, and verifies its ad-hoc signature. It does not replace the installed app or enable services. Use the [installation/update guide](docs/getting-started.md) when you need to test in Mail.
@@ -25,7 +25,7 @@ This compiles and runs seven native test suites plus cross-process preferences a
 After installing and preparing language models, you can separately run:
 
 ```sh
-python3 outputs/mail-translation-probe/source/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
+python3 Sources/verify_worker.py '/Applications/MailTrans.app/Contents/MacOS/TranslationWorker'
 ```
 
 This executes actual on-device translation; it is separate from the native tests and Mail interface checks. Do not describe model-dependent tests or UI checks as passing unless you ran them.

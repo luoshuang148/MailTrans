@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="outputs/mail-translation-probe/assets/mail-translation-icon.png" width="112" alt="MailTrans app icon">
+  <img src="assets/mail-translation-icon.png" width="112" alt="MailTrans app icon">
   <h1>MailTrans</h1>
   <p><strong>Read English emails in Chinese. Stay in Apple Mail.</strong></p>
   <p>A macOS MailKit extension powered by Apple's on-device Translation framework.</p>
@@ -45,10 +45,10 @@ To build from source, you need **Apple Silicon, macOS 26.4 or later, full Xcode 
 ```sh
 git clone https://github.com/luoshuang148/MailTrans.git
 cd MailTrans
-python3 outputs/mail-translation-probe/source/build.py
+python3 Sources/build.py
 ```
 
-The build runs the native test suites, packages the extension and helpers, and creates an ad-hoc signed `outputs/mail-translation-probe/MailTrans.app`. It does **not** install the app or enable background services.
+The build runs the native test suites, packages the extension and helpers, and creates an ad-hoc signed `outputs/MailTrans.app`. It does **not** install the app or enable background services.
 
 Follow the [installation guide](docs/getting-started.md#install-and-enable) to place the app in `/Applications`, enable the Mail extension, and prepare language models. Please read the update steps first if MailTrans is already installed.
 

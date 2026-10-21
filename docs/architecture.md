@@ -57,7 +57,7 @@ The host and helper share preferences through a common factory: the current app'
 
 ## Source map
 
-Sources currently live under [`outputs/mail-translation-probe/source/`](../outputs/mail-translation-probe/source/). The directory name and internal IDs are retained for compatibility.
+Sources live under [`Sources/`](../Sources/). Bundle identifiers and other internal IDs are retained for compatibility.
 
 | File | Responsibility |
 | --- | --- |
@@ -95,4 +95,4 @@ Body-control URLs use strictly validated actions and a 64-character SHA-256 mess
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for checks appropriate to each change. A native build, real local-model execution, and Mail UI rendering are three distinct forms of verification.
 
-[Historical test records](../outputs/mail-translation-probe/测试记录.md) and earlier [lifecycle design notes](superpowers/specs/2026-10-14-mailtrans-lifecycle-design.md) are retained as development history. They may describe older behavior or a particular test environment; current user documentation and source take precedence.
+Earlier local test records and lifecycle design notes are kept out of the repository as development history. They may describe older behavior or a particular test environment; current user documentation and source take precedence.

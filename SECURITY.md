@@ -4,7 +4,7 @@ MailTrans handles email body content and temporary original-message copies. Priv
 
 ## Supported versions
 
-Security fixes are developed for the latest source on `main` (currently the 0.11.1 development line). Older builds have no separate maintenance guarantee. This is an experimental project with best-effort review, not a promised response-time or support service.
+Security fixes are developed for the latest source on `main` (currently the 0.11.2 development line). Older builds have no separate maintenance guarantee. This is an experimental project with best-effort review, not a promised response-time or support service.
 
 ## Report a vulnerability
 

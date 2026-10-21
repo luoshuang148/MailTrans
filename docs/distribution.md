@@ -1,29 +1,29 @@
 # Development distribution
 
-MailTrans 0.11.1 (build 12) is an Apple Silicon development preview for macOS 26.4 or newer. The downloadable `MailTrans-0.11.1-macos-arm64-development.zip` contains an **ad-hoc signed, unnotarized** app. Ad-hoc verification checks integrity; it does not establish an Apple Developer identity or promise that Gatekeeper will accept a downloaded copy. No paid Apple Developer membership is needed to build this preview locally. Cross-Mac installation and Mail extension acceptance require separate testing.
+MailTrans 0.11.2 (build 13) is an Apple Silicon development preview for macOS 26.4 or newer. The downloadable `MailTrans-0.11.2-macos-arm64-development.zip` contains an **ad-hoc signed, unnotarized** app. Ad-hoc verification checks integrity; it does not establish an Apple Developer identity or promise that Gatekeeper will accept a downloaded copy. No paid Apple Developer membership is needed to build this preview locally. Cross-Mac installation and Mail extension acceptance require separate testing.
 
 ## Build and verify
 
 From the repository root on an Apple Silicon Mac with full Xcode and macOS SDK 26.5 or newer:
 
 ```sh
-python3 -m unittest discover -s outputs/mail-translation-probe/source -p 'test_*.py' -v
-python3 outputs/mail-translation-probe/source/build.py
-python3 outputs/mail-translation-probe/source/package_release.py --output-dir work/release
+python3 -m unittest discover -s Sources -p 'test_*.py' -v
+python3 Sources/build.py
+python3 Sources/package_release.py --output-dir work/release
 cd work/release
-shasum -a 256 -c MailTrans-0.11.1-macos-arm64-development.zip.sha256
+shasum -a 256 -c MailTrans-0.11.2-macos-arm64-development.zip.sha256
 ```
 
 The build uses `DEVELOPER_DIR` when set, otherwise the `xcode-select` selection. An explicit override is also supported:
 
 ```sh
-python3 outputs/mail-translation-probe/source/build.py --developer-dir /Applications/Xcode.app/Contents/Developer
+python3 Sources/build.py --developer-dir /Applications/Xcode.app/Contents/Developer
 ```
 
 To run the native regressions independently of Swift Translation SDK/model availability:
 
 ```sh
-python3 outputs/mail-translation-probe/source/build.py --native-tests-only
+python3 Sources/build.py --native-tests-only
 ```
 
 Native test executables target the runner's macOS version; the shipping app, helper and extension retain a 26.4 deployment floor. Test commands have a 90-second execution limit and report failures, including lifecycle or GUI-session failures. This mode compiles no Swift helper and neither installs models nor reads real Mail messages. A full build also runs native regressions, compiles the app and workers, signs the nested components and verifies the complete signature. Records are written under `work/mail-real/`; successful compilation does not imply a live translation or UI acceptance result.
@@ -55,18 +55,18 @@ This is a separate release process requiring an existing local Developer ID Appl
 For an authorized future release, use your existing identity and keychain profile locally. Set `MAILTRANS_SIGNING_IDENTITY` and `MAILTRANS_NOTARY_PROFILE` to their local names, then sign from the inside out:
 
 ```sh
-codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" --entitlements work/mail-real/extension.entitlements outputs/mail-translation-probe/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex
-codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/mail-translation-probe/MailTrans.app/Contents/Helpers/LanguageSetup.app
-codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/mail-translation-probe/MailTrans.app/Contents/MacOS/TranslationWorker
-codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/mail-translation-probe/MailTrans.app/Contents/MacOS/MailTransLifecycle
-codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/mail-translation-probe/MailTrans.app
-codesign --verify --deep --strict --verbose=2 outputs/mail-translation-probe/MailTrans.app
+codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" --entitlements work/mail-real/extension.entitlements outputs/MailTrans.app/Contents/PlugIns/MailTranslationProbe.appex
+codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/MailTrans.app/Contents/Helpers/LanguageSetup.app
+codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/MailTrans.app/Contents/MacOS/TranslationWorker
+codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/MailTrans.app/Contents/MacOS/MailTransLifecycle
+codesign --force --timestamp --options runtime --sign "$MAILTRANS_SIGNING_IDENTITY" outputs/MailTrans.app
+codesign --verify --deep --strict --verbose=2 outputs/MailTrans.app
 mkdir -p work/notary
-ditto -c -k --keepParent outputs/mail-translation-probe/MailTrans.app work/notary/MailTrans-submission.zip
+ditto -c -k --keepParent outputs/MailTrans.app work/notary/MailTrans-submission.zip
 xcrun notarytool submit work/notary/MailTrans-submission.zip --keychain-profile "$MAILTRANS_NOTARY_PROFILE" --wait
-xcrun stapler staple outputs/mail-translation-probe/MailTrans.app
-xcrun stapler validate outputs/mail-translation-probe/MailTrans.app
-spctl --assess --type execute --verbose=2 outputs/mail-translation-probe/MailTrans.app
+xcrun stapler staple outputs/MailTrans.app
+xcrun stapler validate outputs/MailTrans.app
+spctl --assess --type execute --verbose=2 outputs/MailTrans.app
 ```
 
 Check the submission result and log; stapling or assessment failures must stop release. Stapling changes the app bytes, so create and verify a fresh final archive/checksum afterward with a distinct notarized release name. Test the downloaded, quarantined final app and Mail extension on another Mac before claiming compatibility. Successful ad-hoc development checks cannot substitute for these checks.

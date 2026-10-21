@@ -20,12 +20,14 @@ __pycache__/
 
 # Mail data must stay local; only the synthetic fixture is versioned
 *.eml
+!fixtures/layout-sample.eml
 *.mbox
 *.mbox/
 *.source.eml
 *.translated.eml
 **/MailTranslation/
 
-# Development-process artifacts stay local only
-/docs/superpowers/
+# Build output stays local; source, assets, and fixtures are versioned
 /outputs/
+# Development-process docs stay local only
+/docs/superpowers/
