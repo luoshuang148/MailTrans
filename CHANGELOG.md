@@ -2,6 +2,16 @@
 
 User-facing changes are listed below. Version numbers describe application builds; they do not imply a published binary release. See [Git history](https://github.com/luoshuang148/MailTrans/commits/main/) for implementation details.
 
+## v0.11.2 — Automatic reading-view recovery (2026-10-21)
+
+- Recover automatically when Mail restores a message before its MIME data is available and reports no reading view. The extension records a content-free `.last-handled` timestamp only after it has produced or intentionally skipped a reading view; the host checks that marker and the extension process, then asks Mail to reload visible messages until the reading view is rebuilt.
+- If the extension process has exited, re-register the enabled extension through `pluginkit` and reload again. Never re-enable an extension the user disabled.
+- Keep the recovery bounded: at most six reloads per Mail session. Once a message is handled, no further reloads are requested.
+- Leave the existing **重新加载当前邮件** menu action as a manual fallback. No translation-provider, cache-format or privacy changes.
+- The app remains ad-hoc signed and unnotarized.
+
+中文：修复 Mail 启动时恢复上次邮件、原始 MIME 尚未就绪，或扩展进程已退出导致正文没有“翻译为中文”控制条的问题。扩展生成或主动跳过阅读视图后写入不含邮件内容的 `.last-handled` 时间戳；宿主检查该标记和扩展进程，必要时请求 Mail 重新加载可见邮件。扩展进程已退出时，通过 `pluginkit` 重新注册已启用的扩展后再刷新；最多重载六次，成功处理任一邮件后停止，不会重新启用用户已停用的扩展。保留菜单中的“重新加载当前邮件”作为手动兜底。翻译引擎、缓存格式和隐私策略未变。
+
 ## v0.11.1 — Failure diagnostics (2026-10-21)
 
 - Persist the last translation failure code, message, cache key and timestamp, and restore the error state for the same message when the host relaunches.

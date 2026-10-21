@@ -43,6 +43,10 @@ The host persists `MTAutomaticTranslationEnabled` (default true). Pause cancels 
 
 Signed/encrypted messages, unsafe parse results, and content above the documented limits are skipped.
 
+### Reading-view recovery
+
+Mail can restore a message before its MIME data is available, and it can leave a terminated extension process idle after the host restarts. The extension writes a content-free `.last-handled` timestamp only after it has produced or intentionally skipped a reading view. On launch the host checks that marker and the extension process; if either is missing it asks Mail to reload visible messages. When the extension process is gone, the host re-registers the enabled extension through `pluginkit` and reloads again. Recovery is bounded to six reloads, stops as soon as a handled message exists, and never re-enables an extension the user disabled.
+
 ## Lifecycle and process boundaries
 
 The optional per-user LaunchAgent runs `MailTransLifecycle`, an invisible watcher using KVO on `NSWorkspace.runningApplications`. It observes application state rather than polling email or reading message content.
