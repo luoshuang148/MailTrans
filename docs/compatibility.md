@@ -1,5 +1,7 @@
 # Compatibility and acceptance checklist
 
+Source version: **0.11.2 / build 13**. Published development pre-release: **0.11.1 / build 12**. Historical acceptance rows below retain the revisions actually tested.
+
 MailTrans 0.11.2 (build 13) targets Apple Silicon and macOS 26.4 or newer with Apple Mail and locally available English→Chinese translation. A full source build requires macOS SDK 26.5 or newer. Intel Macs and older macOS versions are unsupported. Language preparation may need Apple's model download; translating uses the local worker afterward.
 
 CI checks portable packaging, native regressions and full compilation/signature integrity on its hosted ARM image. Its test executables target that runner's OS and do not exercise installed translation models or real mailboxes. A passing CI run does not establish macOS 26.4 behavior, another physical Mac, downloaded-app Gatekeeper acceptance, first-install extension approval or live translation quality. The development ZIP is ad-hoc signed and unnotarized; no Developer ID/notarization result is implied.
@@ -8,6 +10,7 @@ Record one row per environment actually tested. Leave untested results explicit.
 
 | Environment | macOS / architecture | Xcode / SDK | App revision / checksum | Coverage / result |
 | --- | --- | --- | --- | --- |
+| Development Mac (2026-10-22) | macOS 26.4 / arm64 | Xcode 26.6 / SDK 26.5 | 0.11.2 / build 13; source base `1bfad9d` | 15 portable tests, seven native suites, cross-process preferences, model-status protocol, full compilation and ad-hoc signature verification passed. No installation, live mailbox translation, independent Mac or downloaded ZIP acceptance in this run. |
 | Development Mac | macOS 26.4 / arm64 | Xcode 26.6 / SDK 26.5 | 0.11.1 / build 12; SHA-256 `77010bd9646a7803bb2a09a09caa6bd6597bdd5741e82f55ede06972494dd94b` | Seven native suites, cross-process preferences, model-status protocol, full compilation/signatures, 15 portable tests, ZIP/extracted-app signature and checksum checks passed; failure persistence, menu detail, dismissal and `os_log` entries verified; installed 0.11.1 host launched and extension registered; live Mail translation on this revision pending |
 | GitHub hosted runner | macOS 26.6 arm64 | Xcode 26.6 / SDK 26.5 | 0.11.1 / build 12; SHA-256 `77010bd9646a7803bb2a09a09caa6bd6597bdd5741e82f55ede06972494dd94b` | [0.11.1 run](https://github.com/luoshuang148/MailTrans/actions/runs/39476721720) passed portable and native tests, full build/signature and packaging; its ZIP matches the local ZIP byte-for-byte; no live Mail/model acceptance |
 | Development Mac | macOS 26.4 / arm64 | Xcode 26.6 / SDK 26.5 | 0.11 / build 11; SHA-256 `b5642d97ea6d8485c022f92082e302c664469fdf6b4c797069fd657af6b866da` | Seven native suites, cross-process preferences, model-status protocol, full compilation/signatures, 15 portable tests, ZIP/extracted-app signature and checksum checks passed; installed 0.11 host/extension launched and installed-worker real translation passed; live Mail default-original display and switch-refresh behavior pending |

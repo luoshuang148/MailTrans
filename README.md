@@ -1,3 +1,7 @@
+在 Apple Mail 里一键把英文邮件译成中文。<br>
+翻译使用 Apple 本机模型，邮件正文不发送到云翻译 API。<br>
+[简体中文说明 → README.zh-CN.md](README.zh-CN.md)
+
 <div align="center">
   <img src="assets/mail-translation-icon.png" width="112" alt="MailTrans app icon">
   <h1>MailTrans</h1>
@@ -20,6 +24,14 @@
 MailTrans translates email body text into **Simplified Chinese** inside Apple Mail's reading view. English emails show the original by default while a Chinese translation is prepared in the background; click to view the Chinese version. MailTrans uses Apple's local translation models and keeps the original mailbox message intact.
 
 > **Development pre-release.** Download the app ZIP and SHA-256 checksum from [v0.11.1](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1), or build from source. The app is ad-hoc signed and **not notarized**; macOS may block downloaded copies. Tested locally on Apple Silicon / macOS 26.4. Independent Mac installation remains unverified. See the [setup guide](docs/getting-started.md) and [compatibility checklist](docs/compatibility.md).
+
+**Version status:** source **0.11.2 / build 13**; downloadable development pre-release **0.11.1 / build 12**. These are distinct; 0.11.2 has not been published. [0.11.2 release draft](docs/release-notes-v0.11.2.md).
+
+## 为什么是 MailTrans / Why MailTrans
+
+- **本机翻译 / On device:** uses Apple's downloaded models; MailTrans has no cloud translation API or project telemetry.
+- **原文优先 / Original first:** keeps the original mailbox message intact and visible while a translation is prepared in the background.
+- **保留结构 / Layout aware:** preserves HTML structure where supported; translated text can change wrapping and column widths.
 
 ## Features
 

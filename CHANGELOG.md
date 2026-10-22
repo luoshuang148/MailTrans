@@ -4,6 +4,8 @@ User-facing changes are listed below. Version numbers describe application build
 
 ## v0.11.2 — Automatic reading-view recovery (2026-10-21)
 
+Source build 13; not published as a GitHub release. Latest downloadable pre-release remains v0.11.1 / build 12.
+
 - Recover automatically when Mail restores a message before its MIME data is available and reports no reading view. The extension records a content-free `.last-handled` timestamp only after it has produced or intentionally skipped a reading view; the host checks that marker and the extension process, then asks Mail to reload visible messages until the reading view is rebuilt.
 - If the extension process has exited, re-register the enabled extension through `pluginkit` and reload again. Never re-enable an extension the user disabled.
 - Keep the recovery bounded: at most six reloads per Mail session. Once a message is handled, no further reloads are requested.

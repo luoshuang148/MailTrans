@@ -1,3 +1,7 @@
+在 Apple Mail 里一键把英文邮件译成中文。<br>
+翻译使用 Apple 本机模型，邮件正文不发送到云翻译 API。<br>
+[简体中文说明 → README.zh-CN.md](README.zh-CN.md)
+
 <div align="center">
   <img src="assets/mail-translation-icon.png" width="112" alt="MailTrans 应用图标">
   <h1>MailTrans</h1>
@@ -20,6 +24,8 @@
 MailTrans 在 Apple Mail 的阅读位置将邮件正文翻译为**简体中文**。英文邮件默认显示原文，后台准备译文，点击即可查看中文。翻译由苹果本地模型完成，邮箱里的原始邮件保持不变。
 
 > **开发预发布版。** 可从 [v0.11.1](https://github.com/luoshuang148/MailTrans/releases/tag/v0.11.1) 下载应用 ZIP 与 SHA-256 校验文件，或从源码构建。应用为临时签名，**未经公证**，macOS 可能阻止下载副本。已在 Apple Silicon / macOS 26.4 本地验证，其他独立 Mac 的安装尚未验证。详见[安装指南](docs/getting-started.zh-CN.md)及[兼容性清单](docs/compatibility.md)。
+
+**版本状态：** 源码为 **0.11.2 / build 13**；可下载安装包为 **0.11.1 / build 12**。0.11.2 尚未发布，[发布草稿](docs/release-notes-v0.11.2.md)。
 
 ## 功能
 
