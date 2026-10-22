@@ -1,5 +1,7 @@
 # Compatibility and acceptance checklist
 
+Source version: **0.11.2 / build 13**. Published development pre-release: **0.11.1 / build 12**. Historical acceptance rows below retain the revisions actually tested.
+
 MailTrans 0.11.2 (build 13) targets Apple Silicon and macOS 26.4 or newer with Apple Mail and locally available English→Chinese translation. A full source build requires macOS SDK 26.5 or newer. Intel Macs and older macOS versions are unsupported. Language preparation may need Apple's model download; translating uses the local worker afterward.
 
 CI checks portable packaging, native regressions and full compilation/signature integrity on its hosted ARM image. Its test executables target that runner's OS and do not exercise installed translation models or real mailboxes. A passing CI run does not establish macOS 26.4 behavior, another physical Mac, downloaded-app Gatekeeper acceptance, first-install extension approval or live translation quality. The development ZIP is ad-hoc signed and unnotarized; no Developer ID/notarization result is implied.
